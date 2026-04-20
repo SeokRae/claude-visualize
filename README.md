@@ -2,7 +2,7 @@
 
 A Claude Code plugin that converts documents and data into readable, self-contained HTML visualizations.
 
-[한국어](README.ko.md)
+[한국어](README.ko.md) · [Live Demo](https://seokrae.github.io/claude-visualize/examples/)
 
 ## What It Does
 
@@ -39,7 +39,7 @@ Live samples for each visualization type — open in any browser.
 
 | File | Type | Preview |
 |------|------|---------|
-| [`examples/index.html`](examples/index.html) | — | Gallery index — all 6 types in one page |
+| [`examples/index.html`](examples/index.html) · [↗ Live](https://seokrae.github.io/claude-visualize/examples/) | — | Gallery index — all 6 types in one page |
 | [`examples/report.html`](examples/report.html) | `report` | API migration analysis with summary, background, risks, and next actions |
 | [`examples/flow.html`](examples/flow.html) | `flow` | End-to-end payment process from checkout to settlement |
 | [`examples/comparison.html`](examples/comparison.html) | `comparison` | Session-cookie vs JWT auth architecture — metrics and recommendation |
