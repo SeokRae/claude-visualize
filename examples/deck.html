@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q2 Engineering Strategy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --surface: rgba(12,21,36,0.92);
+      --border: rgba(153,186,255,0.14);
+      --text: #edf3ff;
+      --text-muted: #98abc9;
+      --accent: #68b6ff;
+      --accent-2: #70e1cb;
+      --danger: #ff8c9f;
+      --warning: #ffd072;
+      --font-sans: "Inter","Noto Sans KR",-apple-system,sans-serif;
+      --max: 1000px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-sans);
+      color: var(--text);
+      background: #07101b;
+      line-height: 1.65;
+      letter-spacing: -0.014em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Slide layout */
+    .slide {
+      width: min(var(--max), calc(100% - 0px));
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 64px;
+      border-bottom: 1px solid rgba(153,186,255,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .slide:last-child { border-bottom: none; }
+    .slide-number {
+      position: absolute; top: 28px; right: 32px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      color: rgba(153,186,255,0.3); text-transform: uppercase;
+    }
+
+    /* Slide types */
+    .slide.title-slide {
+      background:
+        radial-gradient(circle at 10% 20%, rgba(104,182,255,0.2), transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(112,225,203,0.15), transparent 40%),
+        linear-gradient(160deg, #091826, #050a12);
+    }
+    .slide.section-title {
+      background: linear-gradient(160deg, #091320, #060e1a);
+      border-left: 3px solid var(--accent);
+      padding-left: 61px;
+    }
+    .slide.content {
+      background: linear-gradient(180deg, #08111f, #060d18);
+    }
+    .slide.closing {
+      background:
+        radial-gradient(circle at 50% 50%, rgba(112,225,203,0.12), transparent 60%),
+        linear-gradient(180deg, #08111f, #050a12);
+      text-align: center;
+      align-items: center;
+    }
+
+    h1 { margin: 0; font-size: clamp(2.8rem, 6vw, 4.5rem); line-height: 1.04; letter-spacing: -0.04em; font-weight: 900; }
+    h2 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.06; letter-spacing: -0.035em; font-weight: 800; }
+    h3 { margin: 0 0 10px; font-size: 1.25rem; letter-spacing: -0.025em; font-weight: 700; }
+    p { margin: 0; color: var(--text-muted); font-size: 16px; max-width: 68ch; }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 999px; margin-bottom: 24px;
+      border: 1px solid rgba(104,182,255,0.2); background: rgba(104,182,255,0.08);
+      color: #c2ddff; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .subtitle { margin-top: 20px; font-size: 18px; color: var(--text-muted); }
+    .meta { margin-top: 36px; font-size: 13px; color: rgba(153,186,255,0.4); letter-spacing: 0.04em; }
+
+    .section-label {
+      font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 12px;
+    }
+
+    /* Content elements */
+    .point-list { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+    .point-item { display: flex; gap: 16px; align-items: flex-start; }
+    .point-num {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+      background: rgba(104,182,255,0.1); color: var(--accent);
+      border: 1px solid rgba(104,182,255,0.2);
+    }
+    .point-body { flex: 1; padding-top: 4px; }
+    .point-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .point-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+    .card-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+    .slide-card {
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 22px;
+      background: rgba(255,255,255,0.03);
+    }
+    .slide-card .icon { font-size: 28px; margin-bottom: 12px; display: block; }
+    .slide-card h3 { font-size: 16px; margin-bottom: 8px; }
+    .slide-card p { font-size: 14px; }
+
+    .quote {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700; letter-spacing: -0.03em;
+      color: var(--text); line-height: 1.3;
+      max-width: 20ch; text-align: center;
+      margin-bottom: 24px;
+    }
+    .quote span { color: var(--accent-2); }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 28px; align-items: start; }
+    .col-label { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+    .metric-list { display: flex; flex-direction: column; gap: 12px; }
+    .metric-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+    .metric-name { font-size: 14px; color: var(--text-muted); }
+    .metric-value { font-size: 15px; font-weight: 700; }
+    .metric-value.green { color: var(--accent-2); }
+    .metric-value.blue { color: var(--accent); }
+    .metric-value.yellow { color: var(--warning); }
+
+    @media (max-width: 700px) {
+      .slide { padding: 40px 24px; min-height: auto; }
+      .card-row { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+      h1 { font-size: 2.4rem; }
+      h2 { font-size: 1.8rem; }
+    }
+    @media print {
+      .slide { page-break-after: always; min-height: 100vh; }
+      body { background: #fff; color: #111; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide 1: Title -->
+  <div class="slide title-slide">
+    <div class="slide-number">01 / 06</div>
+    <div class="eyebrow">Engineering Strategy</div>
+    <h1>Q2 2025<br/>Priorities</h1>
+    <p class="subtitle">Three focus areas to accelerate reliability, developer velocity, and customer growth.</p>
+    <p class="meta">April 2025 &nbsp;·&nbsp; Engineering All-Hands</p>
+  </div>
+
+  <!-- Slide 2: Section title -->
+  <div class="slide section-title">
+    <div class="slide-number">02 / 06</div>
+    <div class="section-label">The Challenge</div>
+    <h2>What's holding us back</h2>
+    <p style="margin-top:16px;font-size:17px">Incident frequency, onboarding friction, and slow feature delivery are all connected to the same root causes.</p>
+  </div>
+
+  <!-- Slide 3: Three priorities -->
+  <div class="slide content">
+    <div class="slide-number">03 / 06</div>
+    <div class="section-label">Our Answer</div>
+    <h2>Three priorities</h2>
+    <ul class="point-list">
+      <li class="point-item">
+        <div class="point-num">1</div>
+        <div class="point-body">
+          <div class="point-title">Platform reliability</div>
+          <div class="point-desc">Reduce P1 incidents from 3/month to under 1 by hardening the payment core and improving on-call tooling.</div>
+        </div>
+      </li>
+      <li class="point-item">
+        <div class="point-num">2</div>
+        <div class="point-body">
+          <div class="point-title">Developer experience</div>
+          <div class="point-desc">Cut new engineer ramp time from 6 weeks to 2 through better documentation, local environments, and test data.</div>
+        </div>
+      </li>
+      <li class="point-item">
+        <div class="point-num">3</div>
+        <div class="point-body">
+          <div class="point-title">Feature throughput</div>
+          <div class="point-desc">Ship the stablecoin GA and two merchant-facing features by targeting architectural bottlenecks in the API layer.</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Slide 4: How we work -->
+  <div class="slide content">
+    <div class="slide-number">04 / 06</div>
+    <div class="section-label">How We Work</div>
+    <h2>Principles for Q2</h2>
+    <div class="card-row">
+      <div class="slide-card">
+        <span class="icon">🔭</span>
+        <h3>Observability first</h3>
+        <p>No feature ships without dashboards, alerts, and runbooks. Instrument before you merge.</p>
+      </div>
+      <div class="slide-card">
+        <span class="icon">🧪</span>
+        <h3>Test in production safely</h3>
+        <p>Feature flags and gradual rollouts by default. Dark launches before public availability.</p>
+      </div>
+      <div class="slide-card">
+        <span class="icon">📖</span>
+        <h3>Docs as code</h3>
+        <p>Architecture decisions recorded in ADRs. API contracts versioned alongside implementation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: OKR targets -->
+  <div class="slide content">
+    <div class="slide-number">05 / 06</div>
+    <div class="section-label">Targets</div>
+    <h2>Q2 OKRs</h2>
+    <div class="two-col">
+      <div>
+        <div class="col-label">Reliability</div>
+        <div class="metric-list">
+          <div class="metric-item"><span class="metric-name">P1 incidents / month</span><span class="metric-value green">≤ 1</span></div>
+          <div class="metric-item"><span class="metric-name">MTTR</span><span class="metric-value green">&lt; 30 min</span></div>
+          <div class="metric-item"><span class="metric-name">API success rate</span><span class="metric-value green">≥ 99.5%</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="col-label">Velocity</div>
+        <div class="metric-list">
+          <div class="metric-item"><span class="metric-name">Engineer ramp time</span><span class="metric-value blue">2 weeks</span></div>
+          <div class="metric-item"><span class="metric-name">Deploy frequency</span><span class="metric-value blue">2× / day</span></div>
+          <div class="metric-item"><span class="metric-name">Stablecoin GA</span><span class="metric-value yellow">June 30</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 6: Closing -->
+  <div class="slide closing">
+    <div class="slide-number">06 / 06</div>
+    <p class="quote">Ship <span>reliably</span>, learn <span>fast</span>.</p>
+    <p style="font-size:15px;max-width:48ch;text-align:center">Questions and input are welcome. Full roadmap and team assignments in the Q2 planning doc.</p>
+    <p style="margin-top:32px;font-size:12px;opacity:0.4;letter-spacing:0.06em;text-transform:uppercase">Engineering All-Hands · April 2025</p>
+  </div>
+
+</body>
+</html>

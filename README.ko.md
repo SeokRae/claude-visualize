@@ -33,6 +33,19 @@
 /plugins install claude-visualize@claude-visualize
 ```
 
+## 샘플
+
+각 시각화 타입별 실제 예시 파일 — 브라우저에서 바로 열 수 있습니다.
+
+| 파일 | 타입 | 내용 |
+|------|------|------|
+| [`examples/report.html`](examples/report.html) | `report` | API 마이그레이션 분석 리포트 (요약, 배경, 리스크, 다음 단계) |
+| [`examples/flow.html`](examples/flow.html) | `flow` | 결제 프로세스 흐름도 (체크아웃 → 정산) |
+| [`examples/comparison.html`](examples/comparison.html) | `comparison` | 세션 쿠키 vs JWT 인증 아키텍처 비교 |
+| [`examples/timeline.html`](examples/timeline.html) | `timeline` | 스테이블코인 서비스 6단계 런치 타임라인 |
+| [`examples/dashboard.html`](examples/dashboard.html) | `dashboard` | 결제 시스템 실시간 KPI 대시보드 |
+| [`examples/deck.html`](examples/deck.html) | `deck` | Q2 엔지니어링 전략 발표 슬라이드 (6장) |
+
 ## 사용 예시
 
 ```

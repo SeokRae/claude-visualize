@@ -33,6 +33,19 @@ Give it any document, data set, or analysis — it produces a single `.html` fil
 /plugins install claude-visualize@claude-visualize
 ```
 
+## Examples
+
+Live samples for each visualization type — open in any browser.
+
+| File | Type | Preview |
+|------|------|---------|
+| [`examples/report.html`](examples/report.html) | `report` | API migration analysis with summary, background, risks, and next actions |
+| [`examples/flow.html`](examples/flow.html) | `flow` | End-to-end payment process from checkout to settlement |
+| [`examples/comparison.html`](examples/comparison.html) | `comparison` | Session-cookie vs JWT auth architecture — metrics and recommendation |
+| [`examples/timeline.html`](examples/timeline.html) | `timeline` | 6-phase stablecoin service launch rollout with status tracking |
+| [`examples/dashboard.html`](examples/dashboard.html) | `dashboard` | Real-time payment system KPIs, service health, and recent alerts |
+| [`examples/deck.html`](examples/deck.html) | `deck` | Q2 engineering strategy presentation — 6 slides |
+
 ## Usage Examples
 
 ```

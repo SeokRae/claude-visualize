@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Architecture — Before vs After</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --surface: rgba(12,21,36,0.92);
+      --border: rgba(153,186,255,0.14);
+      --text: #edf3ff;
+      --text-muted: #98abc9;
+      --accent: #68b6ff;
+      --accent-2: #70e1cb;
+      --danger: #ff8c9f;
+      --warning: #ffd072;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --shadow: 0 24px 72px rgba(0,0,0,0.34);
+      --font-sans: "Inter","Noto Sans KR",-apple-system,sans-serif;
+      --max: 1240px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: var(--font-sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(112,225,203,0.12), transparent 30%),
+        linear-gradient(180deg, #091320 0%, #07101b 42%, #050a12 100%);
+      line-height: 1.65;
+      letter-spacing: -0.014em;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    main { display: grid; gap: 18px; }
+    .hero { border: 1px solid var(--border); background: linear-gradient(180deg, rgba(15,27,44,0.98), rgba(8,15,28,0.94)); border-radius: var(--radius-xl); padding: 32px; box-shadow: var(--shadow); }
+    .section { border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow); }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 999px;
+      border: 1px solid rgba(112,225,203,0.2); background: rgba(112,225,203,0.08);
+      color: #a8f0e0; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    h1 { margin: 16px 0 0; font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.08; letter-spacing: -0.03em; }
+    h2 { margin: 0 0 18px; font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.1; letter-spacing: -0.03em; }
+    h3 { margin: 0 0 10px; font-size: 1.1rem; letter-spacing: -0.02em; }
+    p { margin: 0; color: var(--text-muted); font-size: 15px; max-width: 72ch; }
+    .section-head { margin-bottom: 22px; }
+    .section-head p { margin-top: 8px; }
+
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .compare-col {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .compare-header {
+      padding: 14px 20px;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .compare-header.before { background: rgba(255,140,159,0.08); color: var(--danger); border-bottom: 1px solid rgba(255,140,159,0.15); }
+    .compare-header.after  { background: rgba(112,225,203,0.08); color: var(--accent-2); border-bottom: 1px solid rgba(112,225,203,0.15); }
+    .compare-body { padding: 20px; background: rgba(255,255,255,0.02); }
+    .compare-item { display: flex; gap: 10px; margin-bottom: 14px; }
+    .compare-item:last-child { margin-bottom: 0; }
+    .compare-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+    .compare-text { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+    .compare-text strong { color: var(--text); font-weight: 600; }
+
+    .delta-row {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr;
+      gap: 0;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .delta-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .delta-row:first-child { padding-top: 0; }
+    .delta-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+    .delta-value { font-size: 15px; color: var(--text); font-weight: 500; }
+    .delta-value.bad { color: var(--danger); }
+    .delta-value.good { color: var(--accent-2); }
+    .delta-arrow { text-align: center; color: var(--text-muted); font-size: 18px; }
+
+    .rec-box {
+      padding: 20px; border-radius: var(--radius-lg);
+      border: 1px solid rgba(112,225,203,0.2);
+      background: rgba(112,225,203,0.05);
+    }
+    .rec-box h3 { color: var(--accent-2); margin-bottom: 8px; }
+    .rec-box p { font-size: 15px; }
+
+    @media (max-width: 700px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .delta-row { grid-template-columns: 1fr; }
+      .delta-arrow { display: none; }
+    }
+    @media print {
+      body { background: #fff; color: #111; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <span class="eyebrow">Comparison</span>
+      <h1>Auth Architecture Redesign</h1>
+      <p>Comparison of the session-cookie system (current) against the proposed token-based architecture — covering security posture, scalability, and operational complexity.</p>
+    </header>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Architecture Overview</h2>
+        <p>What changes between the two approaches.</p>
+      </div>
+      <div class="compare-grid">
+        <div class="compare-col">
+          <div class="compare-header before">✕ &nbsp;Current — Session Cookies</div>
+          <div class="compare-body">
+            <div class="compare-item"><span class="compare-icon">🗄️</span><div class="compare-text"><strong>Server-side session store</strong> — Redis cluster holds all active sessions. Single point of failure.</div></div>
+            <div class="compare-item"><span class="compare-icon">🔒</span><div class="compare-text"><strong>Sticky sessions required</strong> — Load balancer must route requests to the originating node or share the session store.</div></div>
+            <div class="compare-item"><span class="compare-icon">🌐</span><div class="compare-text"><strong>Cookie-only</strong> — Mobile apps and third-party integrations require workarounds.</div></div>
+            <div class="compare-item"><span class="compare-icon">⏱️</span><div class="compare-text"><strong>No fine-grained expiry</strong> — Session lifetime is global; can't scope by device or permission level.</div></div>
+          </div>
+        </div>
+        <div class="compare-col">
+          <div class="compare-header after">✓ &nbsp;Proposed — JWT + Refresh Tokens</div>
+          <div class="compare-body">
+            <div class="compare-item"><span class="compare-icon">📦</span><div class="compare-text"><strong>Stateless access tokens</strong> — Services validate JWTs locally without a shared store. No Redis dependency per request.</div></div>
+            <div class="compare-item"><span class="compare-icon">🔁</span><div class="compare-text"><strong>Short-lived access (15 min) + long-lived refresh (30 days)</strong> — Rotating refresh tokens stored server-side for revocation.</div></div>
+            <div class="compare-item"><span class="compare-icon">📱</span><div class="compare-text"><strong>Bearer token</strong> — Works natively for mobile apps, SPAs, and API integrations with no workaround.</div></div>
+            <div class="compare-item"><span class="compare-icon">🎯</span><div class="compare-text"><strong>Scoped claims</strong> — Token payload carries roles and permissions; reduces DB lookups on each request.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Key Metrics Comparison</h2>
+        <p>Quantitative differences where measurable.</p>
+      </div>
+      <div class="delta-row">
+        <div><div class="delta-label">Auth latency (p99)</div><div class="delta-value bad">~85 ms</div></div>
+        <div class="delta-arrow">→</div>
+        <div><div class="delta-label">&nbsp;</div><div class="delta-value good">~12 ms</div></div>
+      </div>
+      <div class="delta-row">
+        <div><div class="delta-label">Redis reads per request</div><div class="delta-value bad">1 (mandatory)</div></div>
+        <div class="delta-arrow">→</div>
+        <div><div class="delta-label">&nbsp;</div><div class="delta-value good">0 (access token)</div></div>
+      </div>
+      <div class="delta-row">
+        <div><div class="delta-label">Mobile client support</div><div class="delta-value bad">Workaround needed</div></div>
+        <div class="delta-arrow">→</div>
+        <div><div class="delta-label">&nbsp;</div><div class="delta-value good">Native</div></div>
+      </div>
+      <div class="delta-row">
+        <div><div class="delta-label">Token revocation</div><div class="delta-value good">Immediate</div></div>
+        <div class="delta-arrow">→</div>
+        <div><div class="delta-label">&nbsp;</div><div class="delta-value bad">Up to 15 min lag (access token TTL)</div></div>
+      </div>
+      <div class="delta-row">
+        <div><div class="delta-label">Migration effort</div><div class="delta-value">—</div></div>
+        <div class="delta-arrow">→</div>
+        <div><div class="delta-label">&nbsp;</div><div class="delta-value" style="color:var(--warning)">~3 weeks (all services)</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Recommendation</h2>
+      </div>
+      <div class="rec-box">
+        <h3>Proceed with JWT + refresh tokens</h3>
+        <p>The latency and scalability gains outweigh the migration cost. The only meaningful regression is the 15-minute revocation window for access tokens — mitigate this by keeping access token TTL at 15 minutes and ensuring refresh token rotation on every use. Begin with non-critical services and validate the revocation flow before migrating the auth service itself.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
