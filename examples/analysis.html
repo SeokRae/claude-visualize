@@ -244,7 +244,7 @@
       </div>
     </div>
     <div class="chart-note">
-      All three observations fall within the targeted txns distribution tail — OBS-A (48s) at the <strong>~84th percentile</strong>, OBS-C (62s) at the <strong>~89th percentile</strong>, and OBS-B (83s) at the <strong>~95th percentile</strong>. None are statistical outliers relative to this group's own pattern. The targeted txns distribution (μ=ln 19, σ=0.92) has a heavier tail than the benchmark (μ=ln 14, σ=0.70) because this group's auth times are both higher on average and more variable — not a system-level anomaly.
+      The chart plots fitted log-normal density curves for both groups. The benchmark curve (μ=ln 14, σ=0.70) peaks earlier and declines steeply, reflecting a distribution concentrated around 14s. The targeted txns curve (μ=ln 19, σ=0.92) peaks later with a wider spread and longer right tail. Vertical markers show where OBS-A (48s), OBS-C (62s), and OBS-B (83s) fall — placing them at the <strong>~84th</strong>, <strong>~89th</strong>, and <strong>~95th percentile</strong> of the targeted txns distribution respectively.
     </div>
   </section>
 
