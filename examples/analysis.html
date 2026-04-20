@@ -154,11 +154,11 @@
     </div>
     <h1>Auth Response Time<br/>Distribution Analysis</h1>
     <p style="color:var(--text-muted);font-size:15px;max-width:68ch">
-      Statistical investigation of payment auth latency — comparing benchmark distribution against merchant-specific observations to determine whether elevated response times indicate a system anomaly.
+      Statistical investigation of payment auth latency — comparing benchmark distribution against targeted-transaction observations to determine whether elevated response times indicate a system anomaly.
     </p>
     <div class="hero-meta">
       <div class="meta-item"><strong>Period</strong> Jan – Mar 2026 (sample)</div>
-      <div class="meta-item"><strong>Dataset</strong> 1,847,392 tx (benchmark) · 1,204 tx (merchant)</div>
+      <div class="meta-item"><strong>Dataset</strong> 1,847,392 tx (benchmark) · 1,204 tx (targeted)</div>
       <div class="meta-item"><strong>Question</strong> Are 48s and 83s observations anomalous?</div>
     </div>
   </header>
@@ -203,13 +203,13 @@
       <canvas id="distChart" height="200"></canvas>
       <div class="marker-legend">
         <div class="marker-item"><div class="marker-line" style="border-color:var(--accent)"></div> Benchmark</div>
-        <div class="marker-item"><div class="marker-line" style="border-color:var(--accent-2)"></div> Merchant</div>
+        <div class="marker-item"><div class="marker-line" style="border-color:var(--accent-2)"></div> Targeted Txns</div>
         <div class="marker-item"><div class="marker-line" style="border-color:var(--warning)"></div> 48s (OBS-A)</div>
         <div class="marker-item"><div class="marker-line" style="border-color:var(--danger)"></div> 83s (OBS-B)</div>
       </div>
     </div>
     <div class="chart-note">
-      Both distributions are right-skewed with a long tail beyond 40s. The merchant tail (60s+) accounts for <strong>6.3%</strong> of transactions vs the benchmark's <strong>3.9%</strong> — a 61% relative elevation that is within expected variance for a 318-transaction sample.
+      Both distributions are right-skewed with a long tail beyond 40s. The targeted txns tail (60s+) accounts for <strong>6.3%</strong> of transactions vs the benchmark's <strong>3.9%</strong> — a 61% relative elevation that is within expected variance for a 1,204-transaction sample.
     </div>
   </section>
 
@@ -217,7 +217,7 @@
   <section class="section">
     <div class="section-head">
       <h2>Section 2 — 60s+ Tail Rate by Payment Method</h2>
-      <p>Percentage of transactions exceeding 60s — benchmark (bar, left axis) vs merchant (line, right axis).</p>
+      <p>Percentage of transactions exceeding 60s — benchmark (bar, left axis) vs targeted txns (line, right axis).</p>
     </div>
     <div class="chart-wrap">
       <canvas id="tailChart" height="220"></canvas>
@@ -237,13 +237,13 @@
       <canvas id="densityChart" height="220"></canvas>
       <div class="marker-legend">
         <div class="marker-item"><div class="marker-line" style="border-color:var(--accent)"></div> Benchmark distribution</div>
-        <div class="marker-item"><div class="marker-line" style="border-color:var(--accent-2)"></div> Merchant distribution</div>
+        <div class="marker-item"><div class="marker-line" style="border-color:var(--accent-2)"></div> Targeted Txns distribution</div>
         <div class="marker-item"><div class="marker-line" style="border-color:var(--warning)"></div> 48s (OBS-A)</div>
         <div class="marker-item"><div class="marker-line" style="border-color:var(--danger)"></div> 83s (OBS-B)</div>
       </div>
     </div>
     <div class="chart-note">
-      OBS-A (48s) and OBS-B (83s) both fall <strong>within the merchant distribution tail</strong> — they are not statistical outliers relative to this merchant's own historical pattern. The merchant distribution (μ=ln 19, σ=1.05) has a heavier tail than the benchmark (μ=ln 14, σ=0.82) due to smaller sample size.
+      OBS-A (48s) and OBS-B (83s) both fall <strong>within the targeted txns distribution tail</strong> — they are not statistical outliers relative to this group's own historical pattern. The targeted txns distribution (μ=ln 19, σ=1.05) has a heavier tail than the benchmark (μ=ln 14, σ=0.82) due to smaller sample size.
     </div>
   </section>
 
@@ -274,7 +274,7 @@
             <td class="hi">48s</td>
             <td class="num">~49s</td>
             <td class="hi">+243%</td>
-            <td><span class="tag warn">Within merchant tail</span></td>
+            <td><span class="tag warn">Within targeted tail</span></td>
           </tr>
           <tr>
             <td>OBS-B</td>
@@ -283,7 +283,7 @@
             <td class="hi">83s</td>
             <td class="num">~84s</td>
             <td class="hi">+493%</td>
-            <td><span class="tag warn">Within merchant tail</span></td>
+            <td><span class="tag warn">Within targeted tail</span></td>
           </tr>
           <tr>
             <td>OBS-C</td>
@@ -317,7 +317,7 @@
       <div class="synth-card">
         <div class="synth-label" style="color:var(--accent-2)">Data Reality</div>
         <div class="synth-verdict">Elevated but within variance</div>
-        <div class="synth-desc">Merchant median (19s) is 36% above the benchmark. For a 318-transaction sample, this spread falls within expected small-merchant variance — not statistically significant at 95% confidence.</div>
+        <div class="synth-desc">Targeted txns median (19s) is 36% above the benchmark. For a 1,204-transaction sample, this spread falls within expected variance — not statistically significant at 95% confidence.</div>
       </div>
       <div class="synth-card">
         <div class="synth-label" style="color:var(--warning)">Environmental Signal</div>
@@ -401,7 +401,7 @@ new Chart(document.getElementById('distChart'), {
         borderWidth: 1.5, borderRadius: 4,
       },
       {
-        label: 'Merchant (%)',
+        label: 'Targeted Txns (%)',
         data: merchantDist,
         backgroundColor: 'rgba(112,225,203,0.18)',
         borderColor: 'rgba(112,225,203,0.55)',
@@ -463,7 +463,7 @@ new Chart(document.getElementById('tailChart'), {
       },
       {
         type: 'line',
-        label: 'Merchant 60s+ (%)',
+        label: 'Targeted Txns 60s+ (%)',
         data: mercTail,
         borderColor: 'rgba(112,225,203,0.85)',
         backgroundColor: 'rgba(112,225,203,0.08)',
@@ -483,7 +483,7 @@ new Chart(document.getElementById('tailChart'), {
     scales: {
       x:  { grid: { color: 'rgba(153,186,255,0.07)' } },
       y:  { position: 'left',  grid: { color: 'rgba(153,186,255,0.07)' }, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Benchmark (%)', font: { size: 11 } } },
-      y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Merchant (%)', font: { size: 11 } } }
+      y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Targeted Txns (%)', font: { size: 11 } } }
     }
   }
 });
@@ -509,7 +509,7 @@ new Chart(document.getElementById('densityChart'), {
         borderWidth: 2.5, pointRadius: 0, tension: 0.4, fill: true,
       },
       {
-        label: 'Merchant density',
+        label: 'Targeted Txns density',
         data: mNorm,
         borderColor: 'rgba(112,225,203,0.85)',
         backgroundColor: 'rgba(112,225,203,0.07)',
