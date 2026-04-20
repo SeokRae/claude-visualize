@@ -353,23 +353,23 @@
   <section class="section">
     <div class="section-head">
       <h2>Synthesis</h2>
-      <p>Three-axis conclusion from the analysis.</p>
+      <p>What each chart section found — and what it means for the investigation.</p>
     </div>
     <div class="synth-grid">
       <div class="synth-card">
-        <div class="synth-label" style="color:var(--accent)">Official Position</div>
-        <div class="synth-verdict">No system delay confirmed</div>
-        <div class="synth-desc">Provider confirmed response times reflect user authentication interaction, not API processing. Consistent with sub-500ms API stage measurements across all three observations.</div>
+        <div class="synth-label" style="color:var(--accent)">Section 4 · Stage Breakdown</div>
+        <div class="synth-verdict">Not a server-side issue</div>
+        <div class="synth-desc">System processing (API stages) accounts for less than 500ms across all three observations — under 15% of total time. The auth stage is user interaction, which is outside server control.</div>
       </div>
       <div class="synth-card">
-        <div class="synth-label" style="color:var(--accent-2)">Data Reality</div>
-        <div class="synth-verdict">Elevated but within variance</div>
-        <div class="synth-desc">Targeted txns median (19s) is 36% above the benchmark. For a 1,204-transaction sample, this spread falls within expected variance — not statistically significant at 95% confidence.</div>
+        <div class="synth-label" style="color:var(--accent-2)">Section 3 · Density Fit</div>
+        <div class="synth-verdict">Observations within expected range</div>
+        <div class="synth-desc">OBS-A (48s), OBS-C (62s), and OBS-B (83s) fall at the 84th, 89th, and 95th percentile of the targeted txns distribution. They are tail values — not anomalies outside the fitted model.</div>
       </div>
       <div class="synth-card">
-        <div class="synth-label" style="color:var(--warning)">Environmental Signal</div>
-        <div class="synth-verdict">Client-side factor likely</div>
-        <div class="synth-desc">Cross-method elevation pattern (card, wallet, bank transfer all elevated) suggests a shared client-side factor. Recommend reproduction testing in an isolated environment before further escalation.</div>
+        <div class="synth-label" style="color:var(--warning)">Section 2 · Tail Rate by Method</div>
+        <div class="synth-verdict">Pattern is cross-method, not isolated</div>
+        <div class="synth-desc">60s+ elevation appears across card, wallet, and bank transfer. A method-specific regression would show one method spiking. The uniform cross-method pattern points to a shared client-side environmental factor.</div>
       </div>
     </div>
   </section>
