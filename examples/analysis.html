@@ -169,6 +169,25 @@
     .tbar-legend-line { width: 20px; border-top: 2px dashed rgba(255,208,114,0.7); }
     .tbar-legend-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-2); }
 
+    /* Section 4 tooltip — matches Chart.js tooltip style */
+    #tbarTooltip {
+      position: fixed; pointer-events: none; z-index: 100;
+      background: rgba(0, 0, 0, 0.82);
+      border: 1px solid rgba(153, 186, 255, 0.22);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: var(--text, #edf3ff);
+      font-family: var(--font-sans);
+      min-width: 196px; opacity: 0; transition: opacity 0.12s;
+      line-height: 1.65;
+    }
+    #tbarTooltip.visible { opacity: 1; }
+    .tt-title { font-weight: 700; margin-bottom: 8px; font-size: 12.5px; letter-spacing: -0.01em; }
+    .tt-row { display: flex; align-items: center; gap: 8px; }
+    .tt-row .tt-val { margin-left: auto; padding-left: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .tt-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .tt-divider { border-top: 1px solid rgba(153,186,255,0.14); margin: 6px 0; }
+    .tt-muted { color: var(--text-muted, #98abc9); }
+
     .marker-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
     .marker-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
     .marker-line { width: 24px; height: 2px; border-top: 2px dashed; }
@@ -327,6 +346,8 @@
       The auth stage (user interaction) accounts for the majority of total time across all observations. System processing completes in <strong>under 500ms</strong> and is outside server control for the auth stage.
     </div>
   </section>
+
+  <div id="tbarTooltip"></div>
 
   <!-- Section 5: Synthesis -->
   <section class="section">
@@ -620,6 +641,48 @@ const tbarTicksEl = document.getElementById('tbarTicks');
   t.style.left = (v / TBAR_MAX * 100) + '%';
   t.textContent = v + 's';
   tbarTicksEl.appendChild(t);
+});
+
+// ── Section 4 tooltip (mirrors Chart.js tooltip style) ─────────────────────
+const tbarTT = document.getElementById('tbarTooltip');
+document.querySelectorAll('.tbar-row').forEach((row, idx) => {
+  const o = tbarObs[idx];
+  const total  = o.auth + o.api;
+  const vsMult = (total / TBAR_P50).toFixed(1);
+  const userPct = (o.auth / total * 100).toFixed(0);
+  const sysStr = o.api >= 1
+    ? `${o.api}s &middot; ${(o.api / total * 100).toFixed(0)}%`
+    : `&lt; 1s &middot; &lt; 1%`;
+
+  row.addEventListener('mouseenter', () => {
+    tbarTT.innerHTML = `
+      <div class="tt-title">${o.id} &middot; ${o.method}</div>
+      <div class="tt-row">
+        <span class="tt-swatch" style="background:rgba(104,182,255,0.75)"></span>
+        <span>User interaction</span>
+        <span class="tt-val">${o.auth}s &middot; ${userPct}%</span>
+      </div>
+      <div class="tt-row">
+        <span class="tt-swatch" style="background:rgba(112,225,203,0.75)"></span>
+        <span>System processing</span>
+        <span class="tt-val">${sysStr}</span>
+      </div>
+      <div class="tt-divider"></div>
+      <div class="tt-row"><span>Total</span><span class="tt-val">~${Math.round(total)}s</span></div>
+      <div class="tt-row tt-muted"><span>vs p50 (14s)</span><span class="tt-val">${vsMult}&times;</span></div>
+    `;
+    tbarTT.classList.add('visible');
+  });
+
+  row.addEventListener('mousemove', e => {
+    const ttW = tbarTT.offsetWidth, ttH = tbarTT.offsetHeight;
+    const x = e.clientX + 16;
+    const y = e.clientY - 10;
+    tbarTT.style.left = (x + ttW > window.innerWidth  - 8 ? e.clientX - ttW - 16 : x) + 'px';
+    tbarTT.style.top  = (y + ttH > window.innerHeight - 8 ? e.clientY - ttH - 10 : y) + 'px';
+  });
+
+  row.addEventListener('mouseleave', () => tbarTT.classList.remove('visible'));
 });
 </script>
 </body>
