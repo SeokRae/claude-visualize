@@ -18,6 +18,7 @@
 | `timeline` | 순차 단계, 롤아웃 일정, 인시던트 진행 |
 | `dashboard` | KPI, 운영 상태, 스냅샷 요약 |
 | `deck` | 발표 슬라이드, 스토리텔링 |
+| `analysis` | 데이터 분포, 통계 패턴, 밀도 커브 |
 
 ## 설치
 
@@ -46,6 +47,7 @@
 | [`examples/timeline.html`](examples/timeline.html) | `timeline` | 스테이블코인 서비스 6단계 런치 타임라인 |
 | [`examples/dashboard.html`](examples/dashboard.html) | `dashboard` | 결제 시스템 실시간 KPI 대시보드 |
 | [`examples/deck.html`](examples/deck.html) | `deck` | Q2 엔지니어링 전략 발표 슬라이드 (6장) |
+| [`examples/analysis.html`](examples/analysis.html) | `analysis` | 인증 응답 시간 분포 분석 — 바 차트, 듀얼축, 밀도 커브, 데이터 테이블 |
 
 ## 사용 예시
 
