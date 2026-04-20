@@ -18,6 +18,7 @@ Give it any document, data set, or analysis — it produces a single `.html` fil
 | `timeline` | Sequential steps, rollout schedules, incident progression |
 | `dashboard` | KPIs, operational status, snapshot summaries |
 | `deck` | Presentation slides, storytelling |
+| `analysis` | Data distribution, statistical patterns, density curves |
 
 ## Installation
 
@@ -46,6 +47,7 @@ Live samples for each visualization type — open in any browser.
 | [`examples/timeline.html`](examples/timeline.html) | `timeline` | 6-phase stablecoin service launch rollout with status tracking |
 | [`examples/dashboard.html`](examples/dashboard.html) | `dashboard` | Real-time payment system KPIs, service health, and recent alerts |
 | [`examples/deck.html`](examples/deck.html) | `deck` | Q2 engineering strategy presentation — 6 slides |
+| [`examples/analysis.html`](examples/analysis.html) | `analysis` | Auth response time distribution — bar, dual-axis, density curves, data table |
 
 ## Usage Examples
 

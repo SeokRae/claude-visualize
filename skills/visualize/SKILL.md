@@ -41,6 +41,7 @@ Convert any document or structured data into a readable, self-contained single H
 | `timeline` | Sequential steps, rollout, incident progression | hero → sequence → milestone details → risk/decision |
 | `dashboard` | KPIs, operational status, snapshot summary | hero → KPI row → supporting cards → notes |
 | `deck` | Presentation, storytelling, section-driven narrative | title slide → section slides → closing |
+| `analysis` | Data-driven investigation — distribution, density, statistical patterns | hero → data context → chart sections → interpretation → synthesis |
 
 **Selection heuristics**:
 - Long text with explanation → `report`
@@ -48,6 +49,7 @@ Convert any document or structured data into a readable, self-contained single H
 - Core is difference or tradeoff → `comparison`
 - Core is numbers or status → `dashboard`
 - Core is narrative or presentation → `deck`
+- Core is actual data with charts, distributions, or statistical patterns → `analysis`
 - When unsure, use `report` and mix in a `flow` or `comparison` section.
 
 Don't mix three or more types. Pick one primary type and add secondary patterns sparingly.
@@ -66,10 +68,32 @@ Don't mix three or more types. Pick one primary type and add secondary patterns 
 
 **Interaction**: Only add filter/tab/toggle if it aids understanding. Core information must be visible in the default state.
 
+## Analysis Type — Additional Rules
+
+Use `analysis` when the core deliverable is data-driven charts with statistical interpretation, not prose or process flows.
+
+**Structure**:
+1. `hero` — data source, period, and the question being answered
+2. Data context section — observation cards (key values, what was measured)
+3. Chart sections — one question per section, chart first then interpretation below
+4. Interpretation section — what the data shows, anomalies, notable patterns
+5. Synthesis section — 2–4 cards summarizing the conclusion per axis
+
+**Chart patterns** (use Chart.js for this type by default):
+- Distribution bar — frequency counts per bucket
+- Line + dual-axis — compare two scales (e.g., count vs percentage)
+- Density curve — log-normal or KDE fit with observed-value vertical markers
+- Stacked bar — composition across categories
+- Data table — raw values alongside charts when precision matters
+
+**Marker convention**: observed values (specific transactions, incidents) are shown as vertical dashed lines with labeled callouts — never buried in prose.
+
+**Interpretation placement**: one short paragraph directly below each chart. Do not save all interpretation for the end.
+
 ## Libraries
 
 Vanilla HTML/CSS/JS by default. Add libraries only when genuinely needed:
-- `Chart.js` — only when actual chart rendering is required
+- `Chart.js` — default for `analysis` type; optional for other types
 - `Mermaid` — only for quick flowcharts or sequences
 - `Reveal.js` — only for deck type with explicit slide navigation
 
