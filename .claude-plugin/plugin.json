@@ -1,0 +1,22 @@
+{
+  "name": "claude-visualize",
+  "version": "1.0.0",
+  "description": "Generate self-contained HTML visualizations from documents and data",
+  "author": {
+    "name": "SeokRae",
+    "email": "kslbsh@gmail.com"
+  },
+  "homepage": "https://github.com/SeokRae/claude-visualize",
+  "repository": "https://github.com/SeokRae/claude-visualize",
+  "license": "MIT",
+  "keywords": [
+    "visualization",
+    "html",
+    "dashboard",
+    "diagram",
+    "flow",
+    "timeline",
+    "report",
+    "slides"
+  ]
+}
