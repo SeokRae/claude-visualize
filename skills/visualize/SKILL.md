@@ -85,8 +85,15 @@ Use `analysis` when the core deliverable is data-driven charts with statistical 
 - Density curve — log-normal or KDE fit with observed-value vertical markers
 - Stacked bar — composition across categories
 - Data table — raw values alongside charts when precision matters
+- Horizontal timeline bar — stage breakdown per observation (e.g., user interaction vs system processing); label each segment centered below its midpoint; for segments too narrow to label inside, omit inner text and show the value below only; use a vertical dashed marker for reference baselines (e.g., p50)
 
 **Marker convention**: observed values (specific transactions, incidents) are shown as vertical dashed lines with labeled callouts — never buried in prose.
+
+**Horizontal timeline bar — label rules**:
+- Each segment gets one centered sub-label below the bar: `{time}s · {pct}% {name}`
+- Sub-label `left` = `(segmentStart + segmentWidth / 2) / MAX_S * 100%`, `transform: translateX(-50%)`
+- Segments under ~5% of total width: omit inner text; sub-label below still shown
+- Right column shows total time only (`~Xs`)
 
 **Interpretation placement**: one short paragraph directly below each chart. Do not save all interpretation for the end.
 
