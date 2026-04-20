@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>claude-visualize — Examples</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --surface: rgba(12, 21, 36, 0.92);
+      --border: rgba(153, 186, 255, 0.14);
+      --text: #edf3ff;
+      --text-muted: #98abc9;
+      --accent: #68b6ff;
+      --accent-2: #70e1cb;
+      --warning: #ffd072;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --shadow: 0 24px 72px rgba(0, 0, 0, 0.34);
+      --font-sans: "Inter", "Noto Sans KR", -apple-system, sans-serif;
+      --max: 1100px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(104, 182, 255, 0.15), transparent 35%),
+        radial-gradient(circle at 85% 80%, rgba(112, 225, 203, 0.10), transparent 35%),
+        linear-gradient(180deg, #091320 0%, #07101b 50%, #050a12 100%);
+      line-height: 1.65;
+      letter-spacing: -0.014em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 72px;
+    }
+
+    /* Hero */
+    .hero { text-align: center; margin-bottom: 56px; }
+
+    .logo {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 18px; border-radius: 999px; margin-bottom: 32px;
+      border: 1px solid rgba(104, 182, 255, 0.2);
+      background: rgba(104, 182, 255, 0.06);
+      font-size: 13px; font-weight: 700; letter-spacing: 0.06em;
+      color: #c2ddff; text-decoration: none;
+    }
+    .logo:hover { background: rgba(104, 182, 255, 0.12); }
+    .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      line-height: 1.06; letter-spacing: -0.04em; font-weight: 900;
+    }
+
+    .hero-sub {
+      font-size: 17px; color: var(--text-muted); max-width: 52ch;
+      margin: 0 auto;
+    }
+
+    /* Section header */
+    .section-header {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
+    }
+    .section-header h2 {
+      margin: 0; font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted);
+    }
+    .section-divider {
+      flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* Card grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute; inset: 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+    }
+
+    .card:hover {
+      border-color: rgba(153, 186, 255, 0.32);
+      transform: translateY(-2px);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.4);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px;
+    }
+
+    .type-badge {
+      font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 5px 10px; border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .arrow {
+      font-size: 18px; color: var(--text-muted); opacity: 0.5;
+      transition: opacity 0.15s, transform 0.15s;
+      margin-top: 2px;
+    }
+    .card:hover .arrow { opacity: 1; transform: translate(2px, -2px); }
+
+    .card-icon { font-size: 28px; line-height: 1; }
+
+    .card h3 {
+      margin: 0;
+      font-size: 17px; font-weight: 700; letter-spacing: -0.025em;
+      color: var(--text);
+    }
+
+    .card p {
+      margin: 0; font-size: 13px; color: var(--text-muted);
+      line-height: 1.65; flex: 1;
+    }
+
+    .card-footer {
+      font-size: 12px; color: rgba(153, 186, 255, 0.4);
+      font-weight: 500; letter-spacing: 0.02em;
+    }
+
+    /* Type color themes */
+    .type-report  { background: rgba(104, 182, 255, 0.1); color: var(--accent); }
+    .type-flow    { background: rgba(112, 225, 203, 0.1); color: var(--accent-2); }
+    .type-comparison { background: rgba(255, 208, 114, 0.1); color: var(--warning); }
+    .type-timeline   { background: rgba(104, 182, 255, 0.08); color: #9dd4ff; }
+    .type-dashboard  { background: rgba(112, 225, 203, 0.08); color: #8de8d4; }
+    .type-deck       { background: rgba(200, 160, 255, 0.1); color: #c8a0ff; }
+
+    .card.report   { --hover-color: rgba(104, 182, 255, 0.04); }
+    .card.flow     { --hover-color: rgba(112, 225, 203, 0.04); }
+    .card.comparison { --hover-color: rgba(255, 208, 114, 0.04); }
+    .card.timeline   { --hover-color: rgba(104, 182, 255, 0.03); }
+    .card.dashboard  { --hover-color: rgba(112, 225, 203, 0.03); }
+    .card.deck       { --hover-color: rgba(200, 160, 255, 0.04); }
+
+    .card.report:hover   { background: rgba(104, 182, 255, 0.04); }
+    .card.flow:hover     { background: rgba(112, 225, 203, 0.04); }
+    .card.comparison:hover { background: rgba(255, 208, 114, 0.04); }
+    .card.timeline:hover   { background: rgba(104, 182, 255, 0.03); }
+    .card.dashboard:hover  { background: rgba(112, 225, 203, 0.03); }
+    .card.deck:hover       { background: rgba(200, 160, 255, 0.04); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 56px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .footer p { font-size: 13px; color: rgba(153, 186, 255, 0.35); }
+    .footer a { color: rgba(153, 186, 255, 0.55); text-decoration: none; }
+    .footer a:hover { color: var(--accent); }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2.2rem; }
+    }
+    @media print {
+      body { background: #fff; color: #111; }
+      .card { border-color: #ddd; box-shadow: none; background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+
+    <header class="hero">
+      <a class="logo" href="https://github.com/SeokRae/claude-visualize">
+        <span class="logo-dot"></span>claude-visualize
+      </a>
+      <h1>Visualization Examples</h1>
+      <p class="hero-sub">Six types — each demonstrating a different way to turn documents and data into readable HTML.</p>
+    </header>
+
+    <div class="section-header">
+      <h2>All types</h2>
+      <div class="section-divider"></div>
+    </div>
+
+    <div class="grid">
+
+      <a class="card report" href="report.html">
+        <div class="card-top">
+          <span class="type-badge type-report">report</span>
+          <span class="arrow">↗</span>
+        </div>
+        <div class="card-icon">📄</div>
+        <h3>API Migration Report</h3>
+        <p>Long-form analysis with summary KPIs, background, per-service status, risk list, and next actions.</p>
+        <div class="card-footer">report.html</div>
+      </a>
+
+      <a class="card flow" href="flow.html">
+        <div class="card-top">
+          <span class="type-badge type-flow">flow</span>
+          <span class="arrow">↗</span>
+        </div>
+        <div class="card-icon">🔀</div>
+        <h3>Payment Process Flow</h3>
+        <p>End-to-end payment sequence from checkout to settlement, with 3DS branch and failure paths shown inline.</p>
+        <div class="card-footer">flow.html</div>
+      </a>
+
+      <a class="card comparison" href="comparison.html">
+        <div class="card-top">
+          <span class="type-badge type-comparison">comparison</span>
+          <span class="arrow">↗</span>
+        </div>
+        <div class="card-icon">⚖️</div>
+        <h3>Auth Architecture</h3>
+        <p>Session-cookie vs JWT — side-by-side feature comparison, quantitative metrics delta, and a recommendation.</p>
+        <div class="card-footer">comparison.html</div>
+      </a>
+
+      <a class="card timeline" href="timeline.html">
+        <div class="card-top">
+          <span class="type-badge type-timeline">timeline</span>
+          <span class="arrow">↗</span>
+        </div>
+        <div class="card-icon">📅</div>
+        <h3>Service Launch Timeline</h3>
+        <p>6-phase stablecoin rollout with done / in-progress / at-risk / planned status markers and blockers.</p>
+        <div class="card-footer">timeline.html</div>
+      </a>
+
+      <a class="card dashboard" href="dashboard.html">
+        <div class="card-top">
+          <span class="type-badge type-dashboard">dashboard</span>
+          <span class="arrow">↗</span>
+        </div>
+        <div class="card-icon">📊</div>
+        <h3>Payment System Dashboard</h3>
+        <p>Real-time KPI row, service health table, payment method breakdown bars, and recent alert feed.</p>
+        <div class="card-footer">dashboard.html</div>
+      </a>
+
+      <a class="card deck" href="deck.html">
+        <div class="card-top">
+          <span class="type-badge type-deck">deck</span>
+          <span class="arrow">↗</span>
+        </div>
+        <div class="card-icon">🎞️</div>
+        <h3>Q2 Engineering Strategy</h3>
+        <p>6-slide presentation deck — title, problem framing, three priorities, principles, OKRs, and closing.</p>
+        <div class="card-footer">deck.html</div>
+      </a>
+
+    </div>
+
+    <footer class="footer">
+      <p>
+        <a href="https://github.com/SeokRae/claude-visualize">SeokRae/claude-visualize</a>
+        &nbsp;·&nbsp; MIT License
+      </p>
+    </footer>
+
+  </main>
+</body>
+</html>

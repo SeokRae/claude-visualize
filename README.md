@@ -39,6 +39,7 @@ Live samples for each visualization type — open in any browser.
 
 | File | Type | Preview |
 |------|------|---------|
+| [`examples/index.html`](examples/index.html) | — | Gallery index — all 6 types in one page |
 | [`examples/report.html`](examples/report.html) | `report` | API migration analysis with summary, background, risks, and next actions |
 | [`examples/flow.html`](examples/flow.html) | `flow` | End-to-end payment process from checkout to settlement |
 | [`examples/comparison.html`](examples/comparison.html) | `comparison` | Session-cookie vs JWT auth architecture — metrics and recommendation |
