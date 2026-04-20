@@ -2,6 +2,8 @@
 
 A Claude Code plugin that converts documents and data into readable, self-contained HTML visualizations.
 
+[한국어](README.ko.md)
+
 ## What It Does
 
 Give it any document, data set, or analysis — it produces a single `.html` file with a polished dark-theme layout. No external dependencies required in the output; the HTML is fully self-contained.
