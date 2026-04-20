@@ -105,9 +105,17 @@
     .tbar-row {
       display: grid; grid-template-columns: 100px 1fr 56px;
       gap: 12px; align-items: center;
-      padding: 14px 0; border-bottom: 1px solid rgba(153,186,255,0.07);
+      padding: 14px 8px; border-bottom: 1px solid rgba(153,186,255,0.07);
+      border-radius: 10px;
+      transition: background 0.15s;
+      cursor: default;
     }
     .tbar-row:last-child { border-bottom: none; }
+    .tbar-row:hover { background: rgba(153,186,255,0.05); }
+    .tbar-row:hover .tbar-seg-user   { background: rgba(104,182,255,0.72); }
+    .tbar-row:hover .tbar-seg-system { background: rgba(112,225,203,0.72); }
+    .tbar-row:hover .tbar-track { background: rgba(153,186,255,0.10); }
+    .tbar-row:hover .tbar-total { color: var(--accent); }
     .tbar-label strong { display: block; font-size: 13px; font-weight: 700; }
     .tbar-label span   { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .tbar-col { display: flex; flex-direction: column; gap: 6px; }
@@ -119,8 +127,8 @@
       position: absolute; left: 0; top: 0; height: 100%;
       display: flex; border-radius: 6px; overflow: hidden;
     }
-    .tbar-seg-user   { background: rgba(104,182,255,0.55); }
-    .tbar-seg-system { background: rgba(112,225,203,0.55); }
+    .tbar-seg-user   { background: rgba(104,182,255,0.55); transition: background 0.15s; }
+    .tbar-seg-system { background: rgba(112,225,203,0.55); transition: background 0.15s; }
     .tbar-sublabel {
       position: relative; height: 18px;
     }
