@@ -39,6 +39,7 @@
 
 | 파일 | 타입 | 내용 |
 |------|------|------|
+| [`examples/index.html`](examples/index.html) | — | 갤러리 인덱스 — 6종 샘플 한 페이지에서 탐색 |
 | [`examples/report.html`](examples/report.html) | `report` | API 마이그레이션 분석 리포트 (요약, 배경, 리스크, 다음 단계) |
 | [`examples/flow.html`](examples/flow.html) | `flow` | 결제 프로세스 흐름도 (체크아웃 → 정산) |
 | [`examples/comparison.html`](examples/comparison.html) | `comparison` | 세션 쿠키 vs JWT 인증 아키텍처 비교 |
