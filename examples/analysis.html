@@ -263,7 +263,7 @@
             <th>API stages (ms)</th>
             <th>Auth stage</th>
             <th>Total</th>
-            <th>vs benchmark p50</th>
+            <th>vs benchmark p50 (14s)</th>
             <th>Classification</th>
           </tr>
         </thead>
@@ -271,35 +271,35 @@
           <tr>
             <td>OBS-A</td>
             <td>Card</td>
-            <td class="num">18–412 ms</td>
+            <td class="num">&lt; 500 ms</td>
             <td class="hi">48s</td>
             <td class="num">~49s</td>
-            <td class="hi">+243%</td>
+            <td class="hi">~2.4×</td>
             <td><span class="tag warn">Within targeted tail</span></td>
           </tr>
           <tr>
             <td>OBS-B</td>
             <td>Card</td>
-            <td class="num">22–389 ms</td>
+            <td class="num">&lt; 500 ms</td>
             <td class="hi">83s</td>
             <td class="num">~84s</td>
-            <td class="hi">+493%</td>
+            <td class="hi">~5.9×</td>
             <td><span class="tag warn">Within targeted tail</span></td>
           </tr>
           <tr>
             <td>OBS-C</td>
             <td>Wallet</td>
-            <td class="num">—</td>
+            <td class="num">&lt; 500 ms</td>
             <td class="num">62s</td>
-            <td class="num">62s</td>
-            <td class="hi">+343%</td>
-            <td><span class="tag ok">Single-flow normal</span></td>
+            <td class="num">~62s</td>
+            <td class="hi">~4.4×</td>
+            <td><span class="tag ok">Within targeted tail</span></td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="chart-note" style="margin-top:14px">
-      API stages (Reserve / Approval calls) complete in <strong>under 500ms</strong> for all three observations — no server-side latency detected. The auth stage reflects user interaction time, which is outside server control.
+      API stages complete in <strong>under 500ms</strong> for all three observations. The auth stage reflects user interaction time, which is outside server control.
     </div>
   </section>
 
