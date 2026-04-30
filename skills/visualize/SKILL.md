@@ -1,6 +1,6 @@
 ---
 name: visualize
-description: "Generate self-contained HTML visualizations from documents, data, flows, system architectures, dashboards, timelines, and analysis content. Keywords: visualize, visualization, visual, diagram, flow, dashboard, timeline, infographic, slides, deck, html, report, chart."
+description: "Generate self-contained HTML visualizations from documents, data, flows, system architectures, dashboards, timelines, and analysis content. Keywords: visualize, visualization, visual, diagram, flow, dashboard, timeline, infographic, slides, deck, html, report, chart, topology, network diagram, service mesh, microservices, infrastructure, kubernetes, nodes, edges."
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 ---
 
@@ -26,7 +26,7 @@ Convert any document or structured data into a readable, self-contained single H
 
 1. Read the input source and summarize the visualization purpose in one sentence.
 2. Select one type from **Type Selection** below.
-3. Decide: new file or improve an existing HTML.
+3. Decide: new file or improve an existing HTML. If the user references an existing HTML file, improve it. Otherwise create a new `*.html` in the current directory.
 4. Start from the **HTML Skeleton** below; strip unnecessary sections.
 5. Apply the **Design Rules** below — hierarchy, density, color, responsive.
 6. Review for readability, mobile width (375px), and scannability before writing.
@@ -42,6 +42,7 @@ Convert any document or structured data into a readable, self-contained single H
 | `dashboard` | KPIs, operational status, snapshot summary | hero → KPI row → supporting cards → notes |
 | `deck` | Presentation, storytelling, section-driven narrative | title slide → section slides → closing |
 | `analysis` | Data-driven investigation — distribution, density, statistical patterns | hero → data context → chart sections → interpretation → synthesis |
+| `topology` | Node-edge graphs — service mesh, infra, microservice dependencies, network | hero → SVG canvas (nodes + edges + clusters) → legend → notes |
 
 **Selection heuristics**:
 - Long text with explanation → `report`
@@ -50,6 +51,7 @@ Convert any document or structured data into a readable, self-contained single H
 - Core is numbers or status → `dashboard`
 - Core is narrative or presentation → `deck`
 - Core is actual data with charts, distributions, or statistical patterns → `analysis`
+- Core is nodes and edges (services, databases, network components, infra, K8s, microservices) → `topology`
 - When unsure, use `report` and mix in a `flow` or `comparison` section.
 
 Don't mix three or more types. Pick one primary type and add secondary patterns sparingly.
@@ -67,6 +69,21 @@ Don't mix three or more types. Pick one primary type and add secondary patterns 
 **Responsive**: No horizontal scroll at 375px. Collapse 2+ col grids to 1-col on mobile. Don't force a high-density desktop layout onto small screens.
 
 **Interaction**: Only add filter/tab/toggle if it aids understanding. Core information must be visible in the default state.
+
+## Type Structures
+
+Quick reference for each type's internal section order. `analysis` and `topology` have dedicated sections below with more detail.
+
+| Type | Section order |
+|------|--------------|
+| `report` | hero → summary cards → body sections (one question each) → risks / action items |
+| `flow` | hero → numbered steps or state nodes → connections / transitions → edge-case notes |
+| `comparison` | hero → comparison axis label → side-by-side or stacked cards → recommendation callout |
+| `timeline` | hero → ordered milestones → milestone detail cards → decision / risk markers |
+| `dashboard` | hero → KPI row (4-col max) → supporting detail cards → footnote / data source |
+| `deck` | title slide → one-point-per-slide body → summary / closing slide |
+| `analysis` | see **Analysis Type** section below |
+| `topology` | see **Topology Type** section below |
 
 ## Analysis Type — Additional Rules
 
@@ -97,12 +114,338 @@ Use `analysis` when the core deliverable is data-driven charts with statistical 
 
 **Interpretation placement**: one short paragraph directly below each chart. Do not save all interpretation for the end.
 
+## Topology Type — Additional Rules
+
+Use `topology` when the subject is **nodes and their connections**: services, servers, databases, queues, load balancers, external APIs, or any network/infra components.
+
+### SVG-only vs D3.js
+
+| Condition | Approach |
+|-----------|----------|
+| ≤ 15 nodes, positions known or derivable | Vanilla SVG + JS |
+| 15+ nodes, or no natural layout | D3.js force-directed |
+| Interactive drill-down needed | D3.js |
+
+### Data Structure
+
+Define `topo` before rendering:
+
+```js
+const topo = {
+  nodes: [
+    // required: id, label, type, x, y
+    // optional: sub (subtitle), status, state
+    // state: 'planned' | 'disabled' | 'deprecated'  → dimmed + badge + hatching
+    { id: 'api', label: 'API Gateway', sub: ':443', type: 'gateway', status: 'healthy', x: 400, y: 200 },
+    { id: 'db',  label: 'PostgreSQL',  sub: 'v15',  type: 'database', status: 'healthy', x: 700, y: 200 },
+    { id: 'ml',  label: 'ML Service',  sub: 'TBD',  type: 'service',  status: 'unknown', state: 'planned', x: 400, y: 400 },
+  ],
+  edges: [
+    // required: from, to, type
+    // optional: label
+    // edges to/from planned nodes are automatically dimmed
+    { from: 'api', to: 'db', type: 'sync', label: 'SQL' },
+    { from: 'api', to: 'ml', type: 'async', label: 'infer' },
+  ],
+  clusters: [
+    // bounds: { x, y, w, h } — explicit positioning (REQUIRED when nesting zones)
+    // Without bounds, bbox is auto-computed from nodes — causes header overlap in nested zones
+    // meta: short strings shown as chips in the zone header
+    // state: 'planned' — dims the entire zone with hatching overlay
+    { id: 'vpc', label: 'Production VPC', type: 'vpc', icon: '⬡',
+      bounds: { x: 60, y: 80, w: 800, h: 520 },
+      nodes: ['api', 'db', 'ml'], meta: ['10.0.0.0/16'] },
+    { id: 'ns', label: 'ns: backend', type: 'namespace', icon: '⎈', parent: 'vpc',
+      bounds: { x: 320, y: 140, w: 240, h: 360 },
+      nodes: ['api', 'ml'], meta: ['k8s v1.29'] },
+  ]
+};
+```
+
+### Node Types → Shapes
+
+| type | Shape | Border color |
+|------|-------|--------------|
+| `service` | rounded rect (rx 10) | `#68b6ff` (accent) |
+| `gateway` | diamond | `#70e1cb` (accent-2) |
+| `database` | SVG cylinder (ellipse + rect) | `#a87dff` |
+| `cache` | rounded rect, dashed stroke | `#ffd072` |
+| `queue` | rect + deco | `#ff9940` |
+| `external` | hexagon | `#98abc9` |
+
+### Edge Types → Styles
+
+| type | Stroke | Dash | Arrowhead |
+|------|--------|------|-----------|
+| `http` | `rgba(104,182,255,0.55)` | solid | single end |
+| `sync` | `rgba(104,182,255,0.45)` | `3,3` | single end |
+| `async` | `rgba(112,225,203,0.55)` | `6,3` | single end |
+| `bidirectional` | `rgba(104,182,255,0.65)` | solid | both ends |
+
+### Status Colors
+
+`healthy` → `#52d988` · `degraded` → `#ffd072` · `down` → `#ff8c9f` · `unknown` → `#98abc9`
+
+Render as a 4px filled circle at the top-right corner of each node.
+
+### SVG Canvas Setup
+
+```html
+<style>
+  /* edge flow animation — applied on hover */
+  @keyframes flow { to { stroke-dashoffset: -20; } }
+  .edge-flow { stroke-dasharray: 10, 6 !important; animation: flow 0.65s linear infinite; }
+  /* smooth opacity transitions on all node groups */
+  #topoG > g { transition: opacity 0.15s; }
+</style>
+
+<svg id="topoSvg" style="display:block;width:100%;height:560px;cursor:grab;"
+     viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- normal arrowheads (one per edge type) -->
+    <marker id="arr-http"  markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5z" fill="rgba(104,182,255,0.75)"/></marker>
+    <marker id="arr-async" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5z" fill="rgba(112,225,203,0.75)"/></marker>
+    <!-- bright arrowheads shown only during hover highlight -->
+    <marker id="arr-hi-out" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4z" fill="#68b6ff"/></marker>
+    <marker id="arr-hi-in"  markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4z" fill="#70e1cb"/></marker>
+    <!-- node glow filter -->
+    <filter id="node-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- planned/disabled hatching patterns -->
+    <pattern id="hatch-planned"  width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="rgba(104,182,255,0.07)" stroke-width="4"/>
+    </pattern>
+    <pattern id="hatch-disabled" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="rgba(152,171,201,0.06)" stroke-width="4"/>
+    </pattern>
+  </defs>
+  <g id="topoG"></g>
+</svg>
+```
+
+### Zoom / Pan (vanilla SVG)
+
+```js
+let vb = { x:0, y:0, w:1200, h:600 };
+const svg = document.getElementById('topoSvg');
+const upd = () => svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+
+svg.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = e.deltaY > 0 ? 1.12 : 0.89;
+  const r = svg.getBoundingClientRect();
+  const mx = (e.clientX - r.left) / r.width * vb.w + vb.x;
+  const my = (e.clientY - r.top)  / r.height * vb.h + vb.y;
+  vb.w = Math.min(2400, Math.max(400, vb.w * f));
+  vb.h = Math.min(1400, Math.max(200, vb.h * f));
+  vb.x = mx - (e.clientX - r.left) / r.width  * vb.w;
+  vb.y = my - (e.clientY - r.top)  / r.height * vb.h;
+  upd();
+});
+
+let drag = false, ds, vs;
+svg.addEventListener('mousedown', e => { drag=true; ds={x:e.clientX,y:e.clientY}; vs={...vb}; });
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const r = svg.getBoundingClientRect();
+  vb.x = vs.x - (e.clientX - ds.x) / r.width  * vb.w;
+  vb.y = vs.y - (e.clientY - ds.y) / r.height * vb.h;
+  upd();
+});
+window.addEventListener('mouseup', () => { drag = false; });
+```
+
+### Auto-layout (when x/y not provided)
+
+1. BFS from nodes with no incoming edges to assign layer depth
+2. `x = layer * 240 + 120`, `y = (index_in_layer) * 160 + 80 + (layer % 2) * 80`
+3. Adjust `viewBox` width/height to bounding box of all nodes + 80px padding
+
+### Edge Path
+
+Use cubic bezier for smooth curves:
+```js
+function edgePath(a, b) {
+  const dx = b.x - a.x;
+  return `M${a.x},${a.y} C${a.x + dx*0.45},${a.y} ${b.x - dx*0.45},${b.y} ${b.x},${b.y}`;
+}
+```
+Shorten endpoints by ~NODE_W/2 so arrows don't overlap node bodies.
+
+### Zone Header Strip
+
+Each zone has a header band at the top of its bounding box:
+- Height: `headerH` (26–30px depending on zone type)
+- Top-rounded rect (same radius as zone body) clipped to header height
+- Left: `icon` + `label` + meta chips (clipped to zone width — never overflow)
+- Right: aggregate status dot (green/yellow/red based on member node statuses)
+- Use `<clipPath>` to prevent label and chips from overflowing zone bounds
+
+### Node / Zone State
+
+| state | Rendering |
+|-------|-----------|
+| `planned` | opacity 0.42, dashed border, diagonal hatch fill, `PLANNED` pill badge above node |
+| `disabled` | opacity 0.28, grey stroke, grey hatch fill, `INACTIVE` pill badge |
+| `deprecated` | opacity 0.35, red-grey, `DEPRECATED` pill badge |
+
+- Edges where either endpoint has `state` → auto-dimmed (opacity 0.35, stroke-dasharray `5,4`)
+- Zone with `state: 'planned'` → entire `<g>` opacity 0.45 + hatching overlay + `PLANNED` chip in header
+
+### Zone Nesting — Avoiding Header Overlap
+
+**Always use explicit `bounds: { x, y, w, h }` when zones are nested** (any zone with `parent`).
+
+Without explicit bounds, auto-computed bbox from node positions causes nested zone headers to stack within ~20px of each other — they overlap.
+
+Header clearance rule:
+```
+depth 0 (region): bounds.y = 28
+depth 1 (vpc):    bounds.y ≥ region.bounds.y + region.headerH + 30
+depth 2 (ns):     bounds.y ≥ vpc.bounds.y    + vpc.headerH    + 30
+```
+
+### Zone Type System
+
+| type | border dash | fill | header | typical use |
+|------|-------------|------|--------|-------------|
+| `region` | `16,6` | transparent | muted | AWS/GCP region |
+| `vpc` | `8,4` | blue tint | blue | VPC / private network |
+| `az` | `6,3` | yellow tint | yellow | Availability Zone |
+| `subnet` | `4,2` | teal tint | teal | Public/private subnet |
+| `namespace` | `4,4` | purple tint | purple | K8s namespace, logical group |
+| `security-group` | `3,2` | red tint | red | Firewall / security boundary |
+
+### Cluster Rendering
+
+Render clusters **before** nodes (outermost depth first, so nodes appear on top):
+1. Sort by depth: no parent = 0, each level +1
+2. For each zone: body rect → hatch overlay (if planned) → header strip → label → chips → status dot
+3. Use `<clipPath>` per zone for label + chips — never let text overflow zone bounds
+
+### Legend
+
+Place below the SVG canvas. Show: node type color swatches + edge line samples + status dots + zone type borders.
+
+### Hover Interaction (Focus + Dim)
+
+When a node is hovered, highlight its connections and dim everything else.
+
+**Required setup — store refs during rendering:**
+
+```js
+const nodeElems = {};  // nodeId → SVG <g>
+const edgeElems = [];  // { from, to, path, labelEl, origMarker, origDash }
+
+// After building each node <g>:
+nodeElems[n.id] = g;
+
+// After building each edge <path>:
+edgeElems.push({ from: e.from, to: e.to, path, labelEl,
+  origMarker: `url(#arr-${e.type})`, origDash: dash || null });
+```
+
+**Highlight function:**
+
+```js
+function highlightNode(nodeId) {
+  const conns  = topo.edges.filter(e => e.from === nodeId || e.to === nodeId);
+  const connIds = new Set(conns.flatMap(e => [e.from, e.to]));
+
+  Object.entries(nodeElems).forEach(([id, el]) => {
+    if      (id === nodeId)    { el.style.opacity = '1';    el.style.filter = 'url(#node-glow)'; }
+    else if (connIds.has(id))  { el.style.opacity = '0.85'; el.style.filter = ''; }
+    else                       { el.style.opacity = '0.1';  el.style.filter = ''; }
+  });
+
+  edgeElems.forEach(ee => {
+    const conn = conns.find(e => e.from === ee.from && e.to === ee.to);
+    if (conn) {
+      const isOut = ee.from === nodeId;
+      ee.path.style.stroke      = isOut ? 'rgba(104,182,255,0.95)' : 'rgba(112,225,203,0.95)';
+      ee.path.style.strokeWidth = '2.5';
+      ee.path.style.opacity     = '1';
+      ee.path.setAttribute('marker-end', `url(#arr-hi-${isOut ? 'out' : 'in'})`);
+      ee.path.classList.add('edge-flow');                          // flowing dash animation
+      if (ee.labelEl) { ee.labelEl.style.opacity = '1';
+                        ee.labelEl.style.fill = isOut ? '#68b6ff' : '#70e1cb'; }
+    } else {
+      ee.path.style.opacity = '0.05';
+      ee.path.classList.remove('edge-flow');
+      if (ee.labelEl) ee.labelEl.style.opacity = '0';
+    }
+  });
+}
+
+function resetHighlight() {
+  Object.values(nodeElems).forEach(el => { el.style.opacity = ''; el.style.filter = ''; });
+  edgeElems.forEach(ee => {
+    ee.path.style.stroke = ''; ee.path.style.strokeWidth = ''; ee.path.style.opacity = '';
+    ee.path.setAttribute('marker-end', ee.origMarker);
+    ee.path.classList.remove('edge-flow');
+    if (ee.origDash) ee.path.setAttribute('stroke-dasharray', ee.origDash);
+    else ee.path.removeAttribute('stroke-dasharray');
+    if (ee.labelEl) { ee.labelEl.style.opacity = ''; ee.labelEl.style.fill = ''; }
+  });
+}
+
+// Reset on canvas background click
+svg.addEventListener('click', e => { if (e.target === svg || e.target.id === 'topoG') resetHighlight(); });
+```
+
+**Hover behaviour summary:**
+
+| Element | Default hover | On hover (connected) | Not connected |
+|---------|--------------|----------------------|---------------|
+| Hovered node | — | opacity 1 + glow filter | — |
+| Connected nodes | — | opacity 0.85 | opacity 0.1 |
+| Outgoing edge | dim | blue `#68b6ff`, `arr-hi-out`, flow anim | opacity 0.05 |
+| Incoming edge | dim | teal `#70e1cb`, `arr-hi-in`, flow anim | opacity 0.05 |
+| Edge labels | opacity 0.6 | opacity 1, colored | opacity 0 |
+
+**Directional tooltip content:**
+
+```js
+const out = topo.edges.filter(e => e.from === n.id)
+  .map(e => `→ ${target.label} (${e.label})`);   // blue arrow = outgoing
+const inc = topo.edges.filter(e => e.to   === n.id)
+  .map(e => `← ${source.label} (${e.label})`);   // teal arrow = incoming
+```
+
+Skip `state` nodes in connection lists (planned edges are not interactive).
+
+### D3.js Force-Directed (15+ nodes)
+
+```js
+// Load: <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+const sim = d3.forceSimulation(topo.nodes)
+  .force('link', d3.forceLink(topo.edges).id(d => d.id).distance(160))
+  .force('charge', d3.forceManyBody().strength(-400))
+  .force('center', d3.forceCenter(width / 2, height / 2))
+  .force('collision', d3.forceCollide(60));
+
+sim.on('tick', () => {
+  // update SVG element positions each tick
+  edgePaths.attr('d', d => edgePath(d.source, d.target));
+  nodeGroups.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+```
+
+Use `simulation.stop()` + `simulation.tick(300)` for static render (no animation).
+
+### Reference Implementation
+
+See `topology-skeleton.html` in this skill directory for a complete working example with all node types, edge styles, zoom/pan, legend, and tooltip.
+
 ## Libraries
 
 Vanilla HTML/CSS/JS by default. Add libraries only when genuinely needed:
 - `Chart.js` — default for `analysis` type; optional for other types
-- `Mermaid` — only for quick flowcharts or sequences
+- `Mermaid` — for `flow` type when the flow is simple and linear (≤ 10 nodes, no custom styling needed); use vanilla SVG for complex state machines, multi-path flows, or when custom interaction is required
 - `Reveal.js` — only for deck type with explicit slide navigation
+- `D3.js` — for `topology` type when 15+ nodes or positions are unknown (force-directed layout); load via CDN `d3.v7.min.js`
 
 Do not preload libraries when the task can be accomplished without them.
 
@@ -211,7 +554,7 @@ Start from this and strip sections that aren't needed.
     .section-head {
       display: flex;
       justify-content: space-between;
-      align-items: end;
+      align-items: flex-start;
       gap: 16px;
       margin-bottom: 18px;
     }
@@ -221,6 +564,7 @@ Start from this and strip sections that aren't needed.
     .grid { display: grid; gap: 16px; }
     .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
     .card {
       border-radius: var(--radius-lg);
@@ -249,7 +593,7 @@ Start from this and strip sections that aren't needed.
     }
 
     @media (max-width: 900px) {
-      .grid.two, .grid.three { grid-template-columns: 1fr; }
+      .grid.two, .grid.three, .grid.four { grid-template-columns: 1fr; }
       .section-head { display: block; }
     }
 
@@ -257,7 +601,7 @@ Start from this and strip sections that aren't needed.
       body { overflow-x: hidden; }
       .page { width: calc(100% - 20px); }
       .hero, .section { padding: 18px; }
-      p { font-size: 14px; }
+      p { font-size: 15px; }
     }
 
     @media print {
@@ -310,3 +654,6 @@ Before finalizing, verify:
 - [ ] Items of the same importance have the same visual weight
 - [ ] Reducing the card count would not improve readability
 - [ ] No horizontal scrolling required to read a paragraph on mobile
+- [ ] External libraries (Chart.js, D3.js) load without console errors
+- [ ] All interactive features (tabs, filters, tooltips) work in the default state
+- [ ] Small text (≤ 13px) meets WCAG AA contrast ratio (4.5:1 minimum)

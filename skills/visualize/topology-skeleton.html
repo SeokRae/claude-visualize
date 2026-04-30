@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Topology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme:dark; --surface:rgba(12,21,36,0.92); --surface-strong:rgba(16,28,46,0.98);
+      --border:rgba(153,186,255,0.14); --border-strong:rgba(153,186,255,0.28);
+      --text:#edf3ff; --text-muted:#98abc9; --accent:#68b6ff; --accent-2:#70e1cb;
+      --radius-xl:28px; --radius-lg:20px; --radius-md:14px;
+      --shadow:0 24px 72px rgba(0,0,0,0.34); --font-sans:"Inter","Noto Sans KR",sans-serif; --max:1320px;
+    }
+    *{box-sizing:border-box;} html,body{margin:0;min-height:100%;background:#07101b;}
+    body{font-family:var(--font-sans);color:var(--text);
+      background:radial-gradient(circle at top left,rgba(104,182,255,0.18),transparent 28%),
+                 linear-gradient(180deg,#091320 0%,#07101b 42%,#050a12 100%);
+      line-height:1.65;letter-spacing:-0.014em;-webkit-font-smoothing:antialiased;}
+    .page{width:min(var(--max),calc(100% - 32px));margin:0 auto;padding:28px 0 56px;}
+    main{display:grid;gap:18px;}
+    .hero,.section{border:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);border-radius:var(--radius-xl);}
+    .hero{padding:32px;margin-bottom:4px;background:linear-gradient(180deg,rgba(15,27,44,0.98),rgba(8,15,28,0.94));}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+      border:1px solid rgba(104,182,255,0.2);background:rgba(104,182,255,0.08);
+      color:#c2ddff;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+    h1,h2,h3{margin:0;line-height:1.08;letter-spacing:-0.03em;}
+    h1{margin-top:16px;font-size:clamp(2.25rem,5vw,3.75rem);}
+    h2{font-size:clamp(1.6rem,3vw,2.3rem);} h3{font-size:clamp(1.15rem,2vw,1.45rem);}
+    p{margin:0;color:var(--text-muted);font-size:15px;}
+    .section{padding:24px;}
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px;}
+    .section-head p{margin-top:10px;}
+    .grid{display:grid;gap:16px;} .grid.two{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .grid.four{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .card{border-radius:var(--radius-lg);padding:20px;background:rgba(255,255,255,0.03);border:1px solid var(--border);}
+
+    .topo-wrap{border-radius:var(--radius-xl);overflow:hidden;border:1px solid var(--border);
+      background:rgba(5,12,22,0.9);box-shadow:var(--shadow);}
+    #topoSvg{display:block;width:100%;height:640px;cursor:grab;user-select:none;}
+    #topoSvg:active{cursor:grabbing;}
+    #topoLegend{display:flex;flex-wrap:wrap;gap:10px 16px;padding:12px 18px;
+      border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);align-items:center;}
+    .leg-item{display:flex;align-items:center;gap:6px;}
+    .leg-sep{width:1px;height:14px;background:rgba(153,186,255,0.15);margin:0 2px;}
+    #topoTip{position:fixed;pointer-events:none;opacity:0;transition:opacity 0.12s;
+      background:var(--surface-strong);border:1px solid var(--border-strong);
+      border-radius:var(--radius-md);padding:10px 14px;font-size:13px;line-height:1.55;
+      z-index:200;max-width:240px;}
+    /* edge flow animation */
+    @keyframes flow { to { stroke-dashoffset: -20; } }
+    .edge-flow { stroke-dasharray: 10, 6 !important; animation: flow 0.65s linear infinite; }
+    /* node group transitions */
+    #topoG > g { transition: opacity 0.15s; }
+    @media(max-width:900px){.grid.two,.grid.four{grid-template-columns:1fr;} #topoSvg{height:420px;}}
+    @media(max-width:375px){body{overflow-x:hidden;}.page{width:calc(100% - 20px);}
+      .hero,.section{padding:18px;}}
+  </style>
+</head>
+<body>
+<main class="page">
+  <header class="hero">
+    <span class="eyebrow">Topology</span>
+    <h1>Production Architecture</h1>
+    <p>AWS ap-northeast-2 · VPC + K8s namespaces. 미개발 서비스는 점선으로 표시. 스크롤로 줌, 드래그로 이동.</p>
+  </header>
+
+  <div class="topo-wrap">
+    <svg id="topoSvg" viewBox="0 0 1380 670" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- arrowheads -->
+        <marker id="arr-http"  markerWidth="7" markerHeight="7" refX="6"   refY="3.5" orient="auto">              <path d="M0,0 L0,7 L7,3.5z" fill="rgba(104,182,255,0.75)"/></marker>
+        <marker id="arr-sync"  markerWidth="7" markerHeight="7" refX="6"   refY="3.5" orient="auto">              <path d="M0,0 L0,7 L7,3.5z" fill="rgba(104,182,255,0.55)"/></marker>
+        <marker id="arr-async" markerWidth="7" markerHeight="7" refX="6"   refY="3.5" orient="auto">              <path d="M0,0 L0,7 L7,3.5z" fill="rgba(112,225,203,0.75)"/></marker>
+        <marker id="arr-be"    markerWidth="7" markerHeight="7" refX="6"   refY="3.5" orient="auto">              <path d="M0,0 L0,7 L7,3.5z" fill="rgba(104,182,255,0.75)"/></marker>
+        <marker id="arr-bs"    markerWidth="7" markerHeight="7" refX="1.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5z" fill="rgba(104,182,255,0.75)"/></marker>
+        <!-- glow filter for hovered node -->
+        <filter id="node-glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <!-- bright arrowheads for highlighted edges -->
+        <marker id="arr-hi-out" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4z" fill="#68b6ff"/></marker>
+        <marker id="arr-hi-in"  markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4z" fill="#70e1cb"/></marker>
+        <!-- planned hatching -->
+        <pattern id="hatch-planned" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="rgba(104,182,255,0.07)" stroke-width="4"/>
+        </pattern>
+        <pattern id="hatch-disabled" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="rgba(152,171,201,0.06)" stroke-width="4"/>
+        </pattern>
+      </defs>
+      <g id="topoG"></g>
+    </svg>
+    <div id="topoLegend"></div>
+  </div>
+
+  <section class="section">
+    <div class="section-head"><div><h2>Zone Summary</h2><p>각 존의 노드 현황과 상태 집계.</p></div></div>
+    <div class="grid four" id="zoneSummary"></div>
+  </section>
+</main>
+<div id="topoTip"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  TOPOLOGY DATA  ← 여기만 수정
+// ══════════════════════════════════════════
+const topo = {
+  nodes: [
+    // state 없음 = active(기본). state: 'planned' | 'disabled' | 'deprecated'
+    { id:'client',  label:'Client Browser',   type:'external',  status:'healthy',  x:90,   y:350 },
+    { id:'alb',     label:'ALB',              sub:'443/80',     type:'gateway',    status:'healthy',  x:310,  y:350 },
+    { id:'api',     label:'API Server',       sub:'nginx:8080', type:'service',    status:'healthy',  x:590,  y:240 },
+    { id:'worker',  label:'Worker',           sub:'celery',     type:'service',    status:'degraded', x:590,  y:460 },
+    { id:'db',      label:'PostgreSQL',       sub:'v15/RDS',    type:'database',   status:'healthy',  x:870,  y:240 },
+    { id:'mq',      label:'SQS Queue',        sub:'FIFO',       type:'queue',      status:'healthy',  x:870,  y:350 },
+    { id:'redis',   label:'Redis',            sub:'v7/EC',      type:'cache',      status:'healthy',  x:870,  y:460 },
+    { id:'stripe',  label:'Stripe API',       type:'external',  status:'healthy',  x:1180, y:240 },
+    { id:'ses',     label:'AWS SES',          type:'external',  status:'healthy',  x:1180, y:460 },
+    // ── 미개발(planned) 노드 예시
+    { id:'ml',      label:'ML Service',       sub:'TBD',        type:'service',    status:'unknown', state:'planned', x:590, y:350 },
+    { id:'search',  label:'Search API',       sub:'Elasticsearch', type:'service', status:'unknown', state:'planned', x:870, y:560 },
+  ],
+  edges: [
+    { from:'client', to:'alb',    type:'http',  label:'HTTPS' },
+    { from:'alb',    to:'api',    type:'http',  label:'HTTP' },
+    { from:'api',    to:'db',     type:'sync',  label:'SQL' },
+    { from:'api',    to:'redis',  type:'sync',  label:'GET/SET' },
+    { from:'api',    to:'mq',     type:'async', label:'Publish' },
+    { from:'worker', to:'mq',     type:'async', label:'Consume' },
+    { from:'worker', to:'db',     type:'sync',  label:'SQL' },
+    { from:'api',    to:'stripe', type:'http',  label:'REST' },
+    { from:'worker', to:'ses',    type:'http',  label:'SendEmail' },
+    // planned 노드로의 엣지는 자동으로 dimmed
+    { from:'api',    to:'ml',     type:'async', label:'infer' },
+    { from:'ml',     to:'search', type:'http',  label:'index' },
+  ],
+
+  clusters: [
+    // ── bounds 명시 방식 (겹침 완전 방지)
+    // bounds: { x, y, w, h }  — 명시하면 auto-compute 무시
+    // state: 'planned' 으로 존 전체를 미개발 표시 가능
+    {
+      id:'region', label:'AWS ap-northeast-2', type:'region', icon:'☁',
+      bounds: { x:40,  y:28,  w:1290, h:614 },
+      nodes: ['alb','api','worker','db','mq','redis','ml','search'],
+      meta: ['ap-northeast-2', '99.99% SLA'],
+    },
+    {
+      id:'vpc', label:'Production VPC', type:'vpc', icon:'⬡',
+      bounds: { x:68,  y:88,  w:990,  h:530 },
+      parent: 'region',
+      nodes: ['alb','api','worker','db','mq','redis','ml','search'],
+      meta: ['10.0.0.0/16'],
+    },
+    {
+      id:'public', label:'Public Subnet', type:'subnet', icon:'↗',
+      bounds: { x:230, y:295, w:192,  h:140 },
+      parent: 'vpc',
+      nodes: ['alb'],
+      meta: ['10.0.1.0/24', 'ap-2a'],
+    },
+    {
+      id:'ns-backend', label:'ns: backend', type:'namespace', icon:'⎈',
+      bounds: { x:478, y:160, w:234,  h:430 },
+      parent: 'vpc',
+      nodes: ['api','worker','ml'],
+      meta: ['k8s v1.29', '3 pods'],
+    },
+    {
+      id:'ns-data', label:'ns: data', type:'namespace', icon:'⎈',
+      bounds: { x:745, y:160, w:250,  h:480 },
+      parent: 'vpc',
+      nodes: ['db','mq','redis','search'],
+      meta: ['managed'],
+    },
+    // ── 미개발(planned) 존 예시
+    // {
+    //   id:'phase2', label:'Phase 2 Zone', type:'namespace', icon:'⏳',
+    //   state: 'planned',
+    //   bounds: { x:478, y:610, w:520, h:120 },
+    //   nodes: ['search'],
+    //   meta: ['Q3 2026'],
+    // },
+  ],
+};
+
+// ══════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════
+const NW=128, NH=42, DBW=108, DBH=48, GR=54, ER=28;
+const STATUS      = { healthy:'#52d988', degraded:'#ffd072', down:'#ff8c9f', unknown:'#98abc9' };
+const EDGE_STROKE = { http:'rgba(104,182,255,0.55)', sync:'rgba(104,182,255,0.4)', async:'rgba(112,225,203,0.6)', bidirectional:'rgba(104,182,255,0.7)' };
+const EDGE_DASH   = { http:'', sync:'3,3', async:'6,3', bidirectional:'' };
+const NODE_FILL   = { service:'rgba(104,182,255,0.10)', gateway:'rgba(112,225,203,0.10)', database:'rgba(168,125,255,0.10)', cache:'rgba(255,208,114,0.08)', queue:'rgba(255,153,64,0.10)', external:'rgba(152,171,201,0.07)' };
+const NODE_STROKE = { service:'#68b6ff', gateway:'#70e1cb', database:'#a87dff', cache:'#ffd072', queue:'#ff9940', external:'#98abc9' };
+
+// ── state: planned / disabled / deprecated
+const STATE_STYLE = {
+  planned:    { opacity:0.42, badge:'PLANNED',    badgeFill:'rgba(104,182,255,0.18)', badgeColor:'#68b6ff', hatch:'planned' },
+  disabled:   { opacity:0.28, badge:'INACTIVE',   badgeFill:'rgba(152,171,201,0.14)', badgeColor:'#98abc9', hatch:'disabled' },
+  deprecated: { opacity:0.35, badge:'DEPRECATED', badgeFill:'rgba(255,140,159,0.14)', badgeColor:'#ff8c9f', hatch:'disabled' },
+};
+
+// ── zone type visual styles
+const ZONE_STYLES = {
+  region:          { strokeColor:'rgba(152,171,201,0.18)', strokeW:1,   dash:'16,6', fillColor:'rgba(0,0,0,0)',         headerFill:'rgba(152,171,201,0.09)', labelColor:'rgba(152,171,201,0.6)',  headerH:30 },
+  vpc:             { strokeColor:'rgba(104,182,255,0.30)', strokeW:1.5, dash:'8,4',  fillColor:'rgba(104,182,255,0.04)', headerFill:'rgba(104,182,255,0.12)', labelColor:'rgba(104,182,255,0.85)', headerH:30 },
+  az:              { strokeColor:'rgba(255,208,114,0.22)', strokeW:1,   dash:'6,3',  fillColor:'rgba(255,208,114,0.03)', headerFill:'rgba(255,208,114,0.09)', labelColor:'rgba(255,208,114,0.7)',  headerH:26 },
+  subnet:          { strokeColor:'rgba(112,225,203,0.28)', strokeW:1.5, dash:'4,2',  fillColor:'rgba(112,225,203,0.06)', headerFill:'rgba(112,225,203,0.12)', labelColor:'rgba(112,225,203,0.85)', headerH:26 },
+  namespace:       { strokeColor:'rgba(168,125,255,0.32)', strokeW:1.5, dash:'4,4',  fillColor:'rgba(168,125,255,0.06)', headerFill:'rgba(168,125,255,0.14)', labelColor:'rgba(168,125,255,0.9)',  headerH:26 },
+  'security-group':{ strokeColor:'rgba(255,140,159,0.22)', strokeW:1,   dash:'3,2',  fillColor:'rgba(255,140,159,0.04)', headerFill:'rgba(255,140,159,0.10)', labelColor:'rgba(255,140,159,0.75)', headerH:24 },
+};
+
+const svg  = document.getElementById('topoSvg');
+const root = document.getElementById('topoG');
+const tip  = document.getElementById('topoTip');
+const ns   = t => document.createElementNS('http://www.w3.org/2000/svg', t);
+let vb = { x:0, y:0, w:1380, h:670 };
+const updVB = () => svg.setAttribute('viewBox', `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+
+// ── hover highlight refs (populated during render)
+const nodeElems = {};   // nodeId → SVG <g>
+const edgeElems = [];   // { from, to, path, labelEl, origStroke, origDash }
+
+function highlightNode(nodeId) {
+  const conns = topo.edges.filter(e => e.from === nodeId || e.to === nodeId);
+  const connIds = new Set(conns.flatMap(e => [e.from, e.to]));
+
+  // nodes: glow hovered, dim unrelated
+  Object.entries(nodeElems).forEach(([id, el]) => {
+    if (id === nodeId) {
+      el.style.opacity = '1';
+      el.style.filter  = 'url(#node-glow)';
+    } else if (connIds.has(id)) {
+      el.style.opacity = '0.85';
+      el.style.filter  = '';
+    } else {
+      el.style.opacity = '0.1';
+      el.style.filter  = '';
+    }
+  });
+
+  // edges: animate connected, dim others
+  edgeElems.forEach(ee => {
+    const conn = conns.find(e => e.from === ee.from && e.to === ee.to);
+    if (conn) {
+      const isOut = ee.from === nodeId;
+      const hiColor = isOut ? 'rgba(104,182,255,0.95)' : 'rgba(112,225,203,0.95)';
+      ee.path.style.stroke      = hiColor;
+      ee.path.style.strokeWidth = '2.5';
+      ee.path.style.opacity     = '1';
+      ee.path.setAttribute('marker-end', `url(#arr-hi-${isOut ? 'out' : 'in'})`);
+      ee.path.classList.add('edge-flow');
+      if (ee.labelEl) { ee.labelEl.style.opacity = '1'; ee.labelEl.style.fill = isOut ? '#68b6ff' : '#70e1cb'; ee.labelEl.style.fontSize = '11px'; ee.labelEl.style.fontWeight = '600'; }
+    } else {
+      ee.path.style.opacity = '0.05';
+      ee.path.classList.remove('edge-flow');
+      if (ee.labelEl) ee.labelEl.style.opacity = '0';
+    }
+  });
+}
+
+function resetHighlight() {
+  Object.values(nodeElems).forEach(el => { el.style.opacity = ''; el.style.filter = ''; });
+  edgeElems.forEach(ee => {
+    ee.path.style.stroke      = '';
+    ee.path.style.strokeWidth = '';
+    ee.path.style.opacity     = '';
+    ee.path.setAttribute('marker-end', ee.origMarker);
+    ee.path.classList.remove('edge-flow');
+    if (ee.origDash) ee.path.setAttribute('stroke-dasharray', ee.origDash);
+    else ee.path.removeAttribute('stroke-dasharray');
+    if (ee.labelEl) { ee.labelEl.style.opacity = ''; ee.labelEl.style.fill = ''; ee.labelEl.style.fontSize = ''; ee.labelEl.style.fontWeight = ''; }
+  });
+}
+
+// reset on canvas click (deselect)
+svg.addEventListener('click', e => { if (e.target === svg || e.target.id === 'topoG') resetHighlight(); });
+
+function center(id){ const n=topo.nodes.find(x=>x.id===id); return n?{x:n.x,y:n.y}:null; }
+function shorten(from,to,amt){ const dx=to.x-from.x,dy=to.y-from.y,l=Math.sqrt(dx*dx+dy*dy)||1; return{x:to.x-dx/l*amt,y:to.y-dy/l*amt}; }
+function nodeHW(n){ if(n.type==='database')return DBW/2; if(n.type==='gateway')return GR; if(n.type==='external')return ER; return NW/2; }
+
+// ── get bounds: explicit > auto
+function getBounds(cl){
+  if(cl.bounds) return {...cl.bounds};
+  const ms=topo.nodes.filter(n=>cl.nodes.includes(n.id));
+  if(!ms.length) return null;
+  const st=ZONE_STYLES[cl.type]||ZONE_STYLES.vpc;
+  const pad=50;
+  const xs=ms.map(n=>n.x), ys=ms.map(n=>n.y);
+  return {
+    x:Math.min(...xs)-NW/2-pad, y:Math.min(...ys)-NH/2-pad,
+    w:Math.max(...xs)-Math.min(...xs)+NW+pad*2,
+    h:Math.max(...ys)-Math.min(...ys)+NH+pad*2,
+  };
+}
+
+// ── sort clusters: outer zones first (no parent = depth 0)
+function clusterDepth(cl,all,d=0){ if(!cl.parent)return d; const p=all.find(c=>c.id===cl.parent); return p?clusterDepth(p,all,d+1):d; }
+const sorted=(topo.clusters||[]).slice().sort((a,b)=>clusterDepth(a,topo.clusters)-clusterDepth(b,topo.clusters));
+
+// ══════════════════════════════════════════
+//  RENDER ZONES
+// ══════════════════════════════════════════
+let clipIdx=0;
+sorted.forEach(cl=>{
+  const bb=getBounds(cl); if(!bb) return;
+  const st=ZONE_STYLES[cl.type]||ZONE_STYLES.vpc;
+  const hh=st.headerH, rx=16;
+  const isPlanned=cl.state==='planned';
+
+  const g=ns('g');
+  if(isPlanned) g.setAttribute('opacity','0.45');
+
+  // zone body
+  const body=ns('rect');
+  body.setAttribute('x',bb.x); body.setAttribute('y',bb.y);
+  body.setAttribute('width',bb.w); body.setAttribute('height',bb.h);
+  body.setAttribute('rx',rx); body.setAttribute('fill',st.fillColor);
+  body.setAttribute('stroke',st.strokeColor); body.setAttribute('stroke-width',st.strokeW);
+  body.setAttribute('stroke-dasharray',st.dash);
+  g.appendChild(body);
+
+  // planned: hatching overlay on body
+  if(isPlanned){
+    const hatch=ns('rect');
+    hatch.setAttribute('x',bb.x); hatch.setAttribute('y',bb.y);
+    hatch.setAttribute('width',bb.w); hatch.setAttribute('height',bb.h);
+    hatch.setAttribute('rx',rx); hatch.setAttribute('fill',`url(#hatch-planned)`);
+    g.appendChild(hatch);
+  }
+
+  // header: top-rounded strip
+  // Two rects technique: rounded rect clipped to header height + square filler
+  const cid=`clip-zone-${clipIdx++}`;
+  const clip=ns('clipPath'); clip.setAttribute('id',cid);
+  const clipR=ns('rect'); clipR.setAttribute('x',bb.x); clipR.setAttribute('y',bb.y); clipR.setAttribute('width',bb.w); clipR.setAttribute('height',hh+rx);
+  clip.appendChild(clipR);
+  const defs=svg.querySelector('defs'); defs.appendChild(clip);
+
+  const hRect=ns('rect');
+  hRect.setAttribute('x',bb.x); hRect.setAttribute('y',bb.y);
+  hRect.setAttribute('width',bb.w); hRect.setAttribute('height',hh+rx);
+  hRect.setAttribute('rx',rx); hRect.setAttribute('fill',st.headerFill);
+  hRect.setAttribute('clip-path',`url(#${cid})`);
+  g.appendChild(hRect);
+
+  // header divider
+  const hdiv=ns('line');
+  hdiv.setAttribute('x1',bb.x); hdiv.setAttribute('y1',bb.y+hh);
+  hdiv.setAttribute('x2',bb.x+bb.w); hdiv.setAttribute('y2',bb.y+hh);
+  hdiv.setAttribute('stroke',st.strokeColor); hdiv.setAttribute('stroke-width','0.8');
+  g.appendChild(hdiv);
+
+  // icon
+  const icon=ns('text');
+  icon.setAttribute('x',bb.x+10); icon.setAttribute('y',bb.y+hh-9);
+  icon.setAttribute('fill',st.labelColor); icon.setAttribute('font-size','13');
+  icon.setAttribute('font-family','Inter,sans-serif');
+  icon.textContent=cl.icon||'▣'; g.appendChild(icon);
+
+  // zone label — clip to zone width
+  const lblCid=`clip-lbl-${clipIdx++}`;
+  const lblClip=ns('clipPath'); lblClip.setAttribute('id',lblCid);
+  // max label area = from x+26 to x+w-60 (leave room for chips + status dot)
+  const lblClipR=ns('rect');
+  lblClipR.setAttribute('x',bb.x+26); lblClipR.setAttribute('y',bb.y);
+  lblClipR.setAttribute('width',Math.max(0,bb.w-90)); lblClipR.setAttribute('height',hh);
+  lblClip.appendChild(lblClipR); defs.appendChild(lblClip);
+
+  const lbl=ns('text');
+  lbl.setAttribute('x',bb.x+28); lbl.setAttribute('y',bb.y+hh-9);
+  lbl.setAttribute('fill',st.labelColor); lbl.setAttribute('font-size','11');
+  lbl.setAttribute('font-family','Inter,sans-serif'); lbl.setAttribute('font-weight','700');
+  lbl.setAttribute('letter-spacing','0.04em');
+  lbl.setAttribute('clip-path',`url(#${lblCid})`);
+  lbl.textContent=cl.label; g.appendChild(lbl);
+
+  // meta chips — measure label width first, clip total chips to zone width
+  const approxLblW=cl.label.length*6.6+30;
+  let chipX=bb.x+approxLblW;
+  const chipMaxX=bb.x+bb.w-22; // leave room for status dot
+  (cl.meta||[]).forEach(m=>{
+    const chipW=Math.min(m.length*6+12, 90);
+    if(chipX+chipW>chipMaxX) return; // skip if overflow
+    const chip=ns('rect');
+    chip.setAttribute('x',chipX); chip.setAttribute('y',bb.y+hh-17);
+    chip.setAttribute('width',chipW); chip.setAttribute('height',14);
+    chip.setAttribute('rx',3); chip.setAttribute('fill',st.headerFill);
+    chip.setAttribute('stroke',st.strokeColor); chip.setAttribute('stroke-width','0.7');
+    g.appendChild(chip);
+    const ct=ns('text');
+    ct.setAttribute('x',chipX+chipW/2); ct.setAttribute('y',bb.y+hh-7);
+    ct.setAttribute('text-anchor','middle'); ct.setAttribute('fill',st.labelColor);
+    ct.setAttribute('font-size','9'); ct.setAttribute('font-family','Inter,monospace');
+    ct.textContent=m; g.appendChild(ct);
+    chipX+=chipW+5;
+  });
+
+  // planned badge in header
+  if(isPlanned){
+    const bw=58, bh=14;
+    const br=ns('rect');
+    br.setAttribute('x',bb.x+bb.w-bw-8); br.setAttribute('y',bb.y+hh-19);
+    br.setAttribute('width',bw); br.setAttribute('height',bh);
+    br.setAttribute('rx',3); br.setAttribute('fill','rgba(104,182,255,0.18)');
+    br.setAttribute('stroke','rgba(104,182,255,0.4)'); br.setAttribute('stroke-width','0.8');
+    g.appendChild(br);
+    const bt=ns('text');
+    bt.setAttribute('x',bb.x+bb.w-bw/2-8); bt.setAttribute('y',bb.y+hh-9);
+    bt.setAttribute('text-anchor','middle'); bt.setAttribute('fill','#68b6ff');
+    bt.setAttribute('font-size','8.5'); bt.setAttribute('font-weight','700');
+    bt.setAttribute('font-family','Inter,sans-serif'); bt.setAttribute('letter-spacing','0.08em');
+    bt.textContent='PLANNED'; g.appendChild(bt);
+  } else {
+    // aggregate status dot (top-right of header)
+    const memberStatuses=topo.nodes.filter(n=>cl.nodes.includes(n.id)).map(n=>n.state?'unknown':n.status);
+    const agg=memberStatuses.includes('down')?'down':memberStatuses.includes('degraded')?'degraded':'healthy';
+    const dot=ns('circle');
+    dot.setAttribute('cx',bb.x+bb.w-11); dot.setAttribute('cy',bb.y+hh/2);
+    dot.setAttribute('r',4); dot.setAttribute('fill',STATUS[agg]);
+    g.appendChild(dot);
+  }
+
+  root.appendChild(g);
+});
+
+// ══════════════════════════════════════════
+//  RENDER EDGES
+// ══════════════════════════════════════════
+topo.edges.forEach(e=>{
+  const a=center(e.from), b=center(e.to); if(!a||!b) return;
+  const na=topo.nodes.find(x=>x.id===e.from), nb=topo.nodes.find(x=>x.id===e.to);
+  const src=shorten(b,a,nodeHW(na)+4), dst=shorten(a,b,nodeHW(nb)+4);
+  const dx=dst.x-src.x;
+  // dim edges that connect planned/disabled nodes
+  const isPlanned=!!(na.state||nb.state);
+  const path=ns('path');
+  path.setAttribute('d',`M${src.x},${src.y} C${src.x+dx*0.45},${src.y} ${dst.x-dx*0.45},${dst.y} ${dst.x},${dst.y}`);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke',EDGE_STROKE[e.type]||EDGE_STROKE.http);
+  path.setAttribute('stroke-width',isPlanned?'1':'1.5');
+  const dash=EDGE_DASH[e.type]||(isPlanned?'5,4':'');
+  if(dash) path.setAttribute('stroke-dasharray',dash);
+  if(isPlanned) path.setAttribute('opacity','0.35');
+  const markerEnd = `url(#arr-${e.type==='bidirectional'?'be':e.type})`;
+  path.setAttribute('marker-end', markerEnd);
+  if(e.type==='bidirectional') path.setAttribute('marker-start','url(#arr-bs)');
+  root.appendChild(path);
+  let labelEl = null;
+  if(e.label&&!isPlanned){
+    const mx=(src.x+dst.x)/2, my=(src.y+dst.y)/2-10;
+    labelEl=ns('text'); labelEl.setAttribute('x',mx); labelEl.setAttribute('y',my);
+    labelEl.setAttribute('text-anchor','middle'); labelEl.setAttribute('fill','rgba(152,171,201,0.6)');
+    labelEl.setAttribute('font-size','10'); labelEl.setAttribute('font-family','Inter,monospace');
+    labelEl.textContent=e.label; root.appendChild(labelEl);
+  }
+  // store for hover highlight
+  if(!isPlanned) edgeElems.push({ from:e.from, to:e.to, path, labelEl, origMarker:markerEnd, origDash:dash||null });
+});
+
+// ══════════════════════════════════════════
+//  RENDER NODES
+// ══════════════════════════════════════════
+topo.nodes.forEach(n=>{
+  const g=ns('g'); g.setAttribute('cursor','pointer');
+  const ss=STATE_STYLE[n.state];
+  if(ss) g.setAttribute('opacity',String(ss.opacity));
+
+  const fill=ss?'rgba(40,50,70,0.6)':(NODE_FILL[n.type]||NODE_FILL.service);
+  const stroke=ss?'rgba(152,171,201,0.4)':(NODE_STROKE[n.type]||NODE_STROKE.service);
+
+  if(n.type==='database'){
+    const rh=9;
+    const rect=ns('rect'); rect.setAttribute('x',n.x-DBW/2); rect.setAttribute('y',n.y-DBH/2+rh); rect.setAttribute('width',DBW); rect.setAttribute('height',DBH-rh); rect.setAttribute('fill',fill); rect.setAttribute('stroke',stroke); rect.setAttribute('stroke-width','1.5'); g.appendChild(rect);
+    [{cy:n.y-DBH/2+rh,f:ss?'rgba(80,90,110,0.4)':'rgba(180,140,255,0.16)'},{cy:n.y+DBH/2,f:fill}].forEach(({cy,f})=>{
+      const el=ns('ellipse'); el.setAttribute('cx',n.x); el.setAttribute('cy',cy); el.setAttribute('rx',DBW/2); el.setAttribute('ry',rh); el.setAttribute('fill',f); el.setAttribute('stroke',stroke); el.setAttribute('stroke-width','1.5'); g.appendChild(el);
+    });
+    if(ss){const h=ns('rect');h.setAttribute('x',n.x-DBW/2);h.setAttribute('y',n.y-DBH/2+rh);h.setAttribute('width',DBW);h.setAttribute('height',DBH-rh);h.setAttribute('fill',`url(#hatch-${ss.hatch})`);g.appendChild(h);}
+  } else if(n.type==='gateway'){
+    const d=ns('polygon'); d.setAttribute('points',`${n.x},${n.y-GR*0.55} ${n.x+GR},${n.y} ${n.x},${n.y+GR*0.55} ${n.x-GR},${n.y}`); d.setAttribute('fill',fill); d.setAttribute('stroke',stroke); d.setAttribute('stroke-width','1.5'); g.appendChild(d);
+    if(ss){const dh=ns('polygon');dh.setAttribute('points',`${n.x},${n.y-GR*0.55} ${n.x+GR},${n.y} ${n.x},${n.y+GR*0.55} ${n.x-GR},${n.y}`);dh.setAttribute('fill',`url(#hatch-${ss.hatch})`);g.appendChild(dh);}
+  } else if(n.type==='external'){
+    const pts=[0,1,2,3,4,5].map(i=>{const a=Math.PI/180*(60*i-30);return`${n.x+ER*Math.cos(a)},${n.y+ER*Math.sin(a)}`;}).join(' ');
+    const h=ns('polygon'); h.setAttribute('points',pts); h.setAttribute('fill',fill); h.setAttribute('stroke',stroke); h.setAttribute('stroke-width','1.5'); g.appendChild(h);
+  } else {
+    const rect=ns('rect'); rect.setAttribute('x',n.x-NW/2); rect.setAttribute('y',n.y-NH/2); rect.setAttribute('width',NW); rect.setAttribute('height',NH); rect.setAttribute('rx',10);
+    rect.setAttribute('fill',fill); rect.setAttribute('stroke',stroke); rect.setAttribute('stroke-width','1.5');
+    if(n.type==='cache'||ss) rect.setAttribute('stroke-dasharray',ss?'5,3':'4,2');
+    g.appendChild(rect);
+    if(ss){const rh=ns('rect');rh.setAttribute('x',n.x-NW/2);rh.setAttribute('y',n.y-NH/2);rh.setAttribute('width',NW);rh.setAttribute('height',NH);rh.setAttribute('rx',10);rh.setAttribute('fill',`url(#hatch-${ss.hatch})`);g.appendChild(rh);}
+  }
+
+  // label
+  const lbl=ns('text'); lbl.setAttribute('x',n.x); lbl.setAttribute('y',n.y+(n.sub?-4:4));
+  lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('fill',ss?'rgba(152,171,201,0.7)':'#edf3ff');
+  lbl.setAttribute('font-size','12'); lbl.setAttribute('font-weight','600'); lbl.setAttribute('font-family','Inter,sans-serif'); lbl.textContent=n.label; g.appendChild(lbl);
+  if(n.sub){ const sub=ns('text'); sub.setAttribute('x',n.x); sub.setAttribute('y',n.y+11); sub.setAttribute('text-anchor','middle'); sub.setAttribute('fill','rgba(152,171,201,0.65)'); sub.setAttribute('font-size','10'); sub.setAttribute('font-family','Inter,monospace'); sub.textContent=n.sub; g.appendChild(sub); }
+
+  // state badge (planned/disabled) — pill above the node
+  if(ss){
+    const bw=ss.badge.length*5.8+12, bh=14;
+    const bx=n.x-bw/2, by=n.y-(n.type==='gateway'?GR*0.55:n.type==='database'?DBH/2:NH/2)-bh-3;
+    const br=ns('rect'); br.setAttribute('x',bx); br.setAttribute('y',by); br.setAttribute('width',bw); br.setAttribute('height',bh); br.setAttribute('rx',bh/2); br.setAttribute('fill',ss.badgeFill); br.setAttribute('stroke',ss.badgeColor); br.setAttribute('stroke-width','0.8'); g.appendChild(br);
+    const bt=ns('text'); bt.setAttribute('x',n.x); bt.setAttribute('y',by+9); bt.setAttribute('text-anchor','middle'); bt.setAttribute('fill',ss.badgeColor); bt.setAttribute('font-size','8'); bt.setAttribute('font-weight','700'); bt.setAttribute('font-family','Inter,sans-serif'); bt.setAttribute('letter-spacing','0.07em'); bt.textContent=ss.badge; g.appendChild(bt);
+  }
+
+  // status dot (skip for planned)
+  if(!ss){
+    const hw=nodeHW(n);
+    const dot=ns('circle'); dot.setAttribute('cx',n.x+hw-7); dot.setAttribute('cy',n.y-(n.type==='gateway'?GR*0.55:n.type==='database'?DBH/2-9:NH/2)+7); dot.setAttribute('r',4); dot.setAttribute('fill',STATUS[n.status]||STATUS.unknown); g.appendChild(dot);
+  }
+
+  // hover: highlight + directional tooltip
+  g.addEventListener('mouseenter',()=>{
+    if (!n.state) highlightNode(n.id);
+    // build connection list with direction
+    const outEdges = topo.edges.filter(e=>e.from===n.id&&!topo.nodes.find(x=>x.id===e.to)?.state);
+    const inEdges  = topo.edges.filter(e=>e.to===n.id  &&!topo.nodes.find(x=>x.id===e.from)?.state);
+    const outLines = outEdges.map(e=>{
+      const t=topo.nodes.find(x=>x.id===e.to);
+      return `<span style="color:#68b6ff">→</span> ${t?.label||e.to}${e.label?` <span style="color:rgba(104,182,255,0.6);font-family:monospace;font-size:10px">(${e.label})</span>`:''}`;
+    });
+    const inLines = inEdges.map(e=>{
+      const s=topo.nodes.find(x=>x.id===e.from);
+      return `<span style="color:#70e1cb">←</span> ${s?.label||e.from}${e.label?` <span style="color:rgba(112,225,203,0.6);font-family:monospace;font-size:10px">(${e.label})</span>`:''}`;
+    });
+    const zones=(topo.clusters||[]).filter(c=>c.nodes.includes(n.id)&&c.type!=='region').map(c=>c.label).join(' › ');
+    const stateLabel=n.state?`<br><span style="color:${ss.badgeColor};font-size:11px">◌ ${n.state.toUpperCase()}</span>`:'';
+    const connHtml=[...outLines,...inLines].map(l=>`<div style="margin-top:4px;font-size:12px">${l}</div>`).join('');
+    tip.innerHTML=`<strong>${n.label}</strong>${n.sub?`<br><span style="font-family:monospace;color:var(--text-muted);font-size:11px">${n.sub}</span>`:''}${stateLabel}${!n.state?`<br><span style="color:${STATUS[n.status]}">${n.status}</span>`:''}${zones?`<br><small style="color:var(--text-muted)">📦 ${zones}</small>`:''}${connHtml}`;
+    tip.style.opacity='1';
+  });
+  g.addEventListener('mousemove',e=>{ tip.style.left=(e.clientX+16)+'px'; tip.style.top=(e.clientY-10)+'px'; });
+  g.addEventListener('mouseleave',()=>{ resetHighlight(); tip.style.opacity='0'; });
+  // store ref
+  nodeElems[n.id] = g;
+  root.appendChild(g);
+});
+
+// ══════════════════════════════════════════
+//  ZOOM / PAN
+// ══════════════════════════════════════════
+let drag=false,ds,vs;
+svg.addEventListener('wheel',e=>{
+  e.preventDefault(); const f=e.deltaY>0?1.12:0.89;
+  const r=svg.getBoundingClientRect();
+  const mx=(e.clientX-r.left)/r.width*vb.w+vb.x, my=(e.clientY-r.top)/r.height*vb.h+vb.y;
+  vb.w=Math.min(2600,Math.max(400,vb.w*f)); vb.h=Math.min(1500,Math.max(200,vb.h*f));
+  vb.x=mx-(e.clientX-r.left)/r.width*vb.w; vb.y=my-(e.clientY-r.top)/r.height*vb.h; updVB();
+});
+svg.addEventListener('mousedown',e=>{ drag=true; ds={x:e.clientX,y:e.clientY}; vs={...vb}; });
+window.addEventListener('mousemove',e=>{ if(!drag)return; const r=svg.getBoundingClientRect(); vb.x=vs.x-(e.clientX-ds.x)/r.width*vb.w; vb.y=vs.y-(e.clientY-ds.y)/r.height*vb.h; updVB(); });
+window.addEventListener('mouseup',()=>{ drag=false; });
+updVB();
+
+// ══════════════════════════════════════════
+//  LEGEND
+// ══════════════════════════════════════════
+const leg=document.getElementById('topoLegend');
+[{l:'Service',c:'#68b6ff'},{l:'Gateway',c:'#70e1cb'},{l:'Database',c:'#a87dff'},{l:'Cache',c:'#ffd072',d:true},{l:'Queue',c:'#ff9940'},{l:'External',c:'#98abc9'}].forEach(nt=>{
+  const d=document.createElement('div'); d.className='leg-item';
+  d.innerHTML=`<span style="width:26px;height:14px;border-radius:3px;border:1.5px ${nt.d?'dashed':'solid'} ${nt.c};background:${nt.c}22;display:inline-block;"></span><span>${nt.l}</span>`;
+  leg.appendChild(d);
+});
+const s1=document.createElement('span'); s1.className='leg-sep'; leg.appendChild(s1);
+[{l:'HTTP',d:'',c:'rgba(104,182,255,0.65)'},{l:'Sync',d:'3,3',c:'rgba(104,182,255,0.5)'},{l:'Async',d:'6,3',c:'rgba(112,225,203,0.65)'}].forEach(et=>{
+  const d=document.createElement('div'); d.className='leg-item';
+  d.innerHTML=`<svg width="26" height="12" style="overflow:visible"><line x1="0" y1="6" x2="26" y2="6" stroke="${et.c}" stroke-width="1.5" stroke-dasharray="${et.d}"/></svg><span>${et.l}</span>`;
+  leg.appendChild(d);
+});
+const s2=document.createElement('span'); s2.className='leg-sep'; leg.appendChild(s2);
+[{l:'VPC',c:'rgba(104,182,255,0.8)',d:'8,4'},{l:'Subnet',c:'rgba(112,225,203,0.8)',d:'4,2'},{l:'Namespace',c:'rgba(168,125,255,0.85)',d:'4,4'}].forEach(zt=>{
+  const d=document.createElement('div'); d.className='leg-item';
+  d.innerHTML=`<svg width="26" height="14" style="overflow:visible"><rect x="0" y="0" width="26" height="14" rx="3" fill="none" stroke="${zt.c}" stroke-width="1.5" stroke-dasharray="${zt.d}"/></svg><span>${zt.l}</span>`;
+  leg.appendChild(d);
+});
+const s3=document.createElement('span'); s3.className='leg-sep'; leg.appendChild(s3);
+[{l:'Planned',c:'#68b6ff'},{l:'Degraded',c:'#ffd072'},{l:'Healthy',c:'#52d988'}].forEach(st=>{
+  const d=document.createElement('div'); d.className='leg-item';
+  d.innerHTML=`<span style="width:9px;height:9px;border-radius:50%;background:${st.c};display:inline-block;"></span><span>${st.l}</span>`;
+  leg.appendChild(d);
+});
+
+// ══════════════════════════════════════════
+//  ZONE SUMMARY CARDS
+// ══════════════════════════════════════════
+const sumEl=document.getElementById('zoneSummary');
+(topo.clusters||[]).filter(c=>c.type!=='region').forEach(cl=>{
+  const st=ZONE_STYLES[cl.type]||ZONE_STYLES.vpc;
+  const ms=topo.nodes.filter(n=>cl.nodes.includes(n.id));
+  const active=ms.filter(n=>!n.state), planned=ms.filter(n=>n.state==='planned');
+  const statuses=active.map(n=>n.status);
+  const agg=statuses.includes('down')?'down':statuses.includes('degraded')?'degraded':'healthy';
+  const isPlanned=cl.state==='planned';
+  const card=document.createElement('article'); card.className='card';
+  card.style.cssText=`border-color:${st.strokeColor};background:${st.headerFill};${isPlanned?'opacity:0.55;':''}`;
+  card.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:13px;font-weight:700;color:${st.labelColor}">${cl.icon||'▣'} ${cl.label}</span>
+      ${isPlanned?`<span style="font-size:10px;color:#68b6ff;background:rgba(104,182,255,0.15);padding:2px 7px;border-radius:999px;">PLANNED</span>`:`<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:${STATUS[agg]}"><span style="width:7px;height:7px;border-radius:50%;background:${STATUS[agg]};display:inline-block;"></span>${agg}</span>`}
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:8px;">
+      <div><div style="font-size:22px;font-weight:800;letter-spacing:-0.04em;color:var(--text)">${active.length}</div><div style="font-size:11px;color:var(--text-muted)">active</div></div>
+      ${planned.length?`<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.04em;color:#68b6ff">${planned.length}</div><div style="font-size:11px;color:var(--text-muted)">planned</div></div>`:''}
+    </div>
+    ${(cl.meta||[]).map(m=>`<span style="display:inline-flex;padding:2px 7px;border-radius:3px;border:1px solid ${st.strokeColor};font-size:10px;color:${st.labelColor};font-family:monospace;margin:2px 2px 0 0;">${m}</span>`).join('')}
+  `;
+  sumEl.appendChild(card);
+});
+</script>
+</body>
+</html>
