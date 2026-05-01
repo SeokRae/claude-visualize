@@ -26,7 +26,7 @@ Convert any document or structured data into a readable, self-contained single H
 
 1. Read the input source and summarize the visualization purpose in one sentence.
 2. Select one type from **Type Selection** below.
-3. Decide: new file or improve an existing HTML. If the user references an existing HTML file, improve it. Otherwise create a new `*.html` in the current directory.
+3. Decide: new file or improve an existing HTML.
 4. Start from the **HTML Skeleton** below; strip unnecessary sections.
 5. Apply the **Design Rules** below — hierarchy, density, color, responsive.
 6. Review for readability, mobile width (375px), and scannability before writing.
@@ -69,21 +69,6 @@ Don't mix three or more types. Pick one primary type and add secondary patterns 
 **Responsive**: No horizontal scroll at 375px. Collapse 2+ col grids to 1-col on mobile. Don't force a high-density desktop layout onto small screens.
 
 **Interaction**: Only add filter/tab/toggle if it aids understanding. Core information must be visible in the default state.
-
-## Type Structures
-
-Quick reference for each type's internal section order. `analysis` and `topology` have dedicated sections below with more detail.
-
-| Type | Section order |
-|------|--------------|
-| `report` | hero → summary cards → body sections (one question each) → risks / action items |
-| `flow` | hero → numbered steps or state nodes → connections / transitions → edge-case notes |
-| `comparison` | hero → comparison axis label → side-by-side or stacked cards → recommendation callout |
-| `timeline` | hero → ordered milestones → milestone detail cards → decision / risk markers |
-| `dashboard` | hero → KPI row (4-col max) → supporting detail cards → footnote / data source |
-| `deck` | title slide → one-point-per-slide body → summary / closing slide |
-| `analysis` | see **Analysis Type** section below |
-| `topology` | see **Topology Type** section below |
 
 ## Analysis Type — Additional Rules
 
@@ -175,12 +160,16 @@ const topo = {
 
 ### Edge Types → Styles
 
+Default `stroke-width`: **`2`** (1.5 is too thin to read; hover highlight uses `2.5`)
+
 | type | Stroke | Dash | Arrowhead |
 |------|--------|------|-----------|
-| `http` | `rgba(104,182,255,0.55)` | solid | single end |
+| `http` | `rgba(104,182,255,0.55)` | solid (no dash) | single end |
 | `sync` | `rgba(104,182,255,0.45)` | `3,3` | single end |
 | `async` | `rgba(112,225,203,0.55)` | `6,3` | single end |
-| `bidirectional` | `rgba(104,182,255,0.65)` | solid | both ends |
+| `bidirectional` | `rgba(104,182,255,0.65)` | solid (no dash) | both ends |
+
+> **`http` / `bidirectional`** have no dasharray → `edge-flow` animation class is present but produces no visible movement (solid lines don't march). This is intentional — solid = synchronous call.
 
 ### Status Colors
 
@@ -192,9 +181,10 @@ Render as a 4px filled circle at the top-right corner of each node.
 
 ```html
 <style>
-  /* edge flow animation — applied on hover */
+  /* edge flow animation — applied by default to all edges; each edge type's dasharray drives the visual */
+  /* NEVER add stroke-dasharray here — it overrides http(solid)/sync/async type distinction */
   @keyframes flow { to { stroke-dashoffset: -20; } }
-  .edge-flow { stroke-dasharray: 10, 6 !important; animation: flow 0.65s linear infinite; }
+  .edge-flow { animation: flow 0.65s linear infinite; }
   /* smooth opacity transitions on all node groups */
   #topoG > g { transition: opacity 0.15s; }
 </style>
@@ -344,7 +334,8 @@ nodeElems[n.id] = g;
 
 // After building each edge <path>:
 edgeElems.push({ from: e.from, to: e.to, path, labelEl,
-  origMarker: `url(#arr-${e.type})`, origDash: dash || null });
+  origMarker: `url(#arr-${e.type})`, origDash: dash || null, origStroke: s.stroke });
+// origStroke is required — resetHighlight must restore the attribute, not clear it to ''
 ```
 
 **Highlight function:**
@@ -382,9 +373,11 @@ function highlightNode(nodeId) {
 function resetHighlight() {
   Object.values(nodeElems).forEach(el => { el.style.opacity = ''; el.style.filter = ''; });
   edgeElems.forEach(ee => {
-    ee.path.style.stroke = ''; ee.path.style.strokeWidth = ''; ee.path.style.opacity = '';
+    // restore origStroke via setAttribute — never use setAttribute('stroke','') which makes edges invisible
+    ee.path.setAttribute('stroke', ee.origStroke);
+    ee.path.style.strokeWidth = ''; ee.path.style.opacity = '';
     ee.path.setAttribute('marker-end', ee.origMarker);
-    ee.path.classList.remove('edge-flow');
+    ee.path.classList.add('edge-flow');   // keep animation — do NOT remove on reset
     if (ee.origDash) ee.path.setAttribute('stroke-dasharray', ee.origDash);
     else ee.path.removeAttribute('stroke-dasharray');
     if (ee.labelEl) { ee.labelEl.style.opacity = ''; ee.labelEl.style.fill = ''; }
@@ -393,16 +386,21 @@ function resetHighlight() {
 
 // Reset on canvas background click
 svg.addEventListener('click', e => { if (e.target === svg || e.target.id === 'topoG') resetHighlight(); });
+
+// Apply edge-flow to all edges by default after render — sync/async edges animate, http(solid) edges stay solid
+// (flow animation only has a visible effect when the edge has a stroke-dasharray)
+renderTopo();
+edgeElems.forEach(ee => ee.path.classList.add('edge-flow'));
 ```
 
 **Hover behaviour summary:**
 
-| Element | Default hover | On hover (connected) | Not connected |
+| Element | Default state | On hover (connected) | Not connected |
 |---------|--------------|----------------------|---------------|
 | Hovered node | — | opacity 1 + glow filter | — |
 | Connected nodes | — | opacity 0.85 | opacity 0.1 |
-| Outgoing edge | dim | blue `#68b6ff`, `arr-hi-out`, flow anim | opacity 0.05 |
-| Incoming edge | dim | teal `#70e1cb`, `arr-hi-in`, flow anim | opacity 0.05 |
+| Outgoing edge | origStroke + flow anim (if dashed) | blue `#68b6ff`, `arr-hi-out`, flow anim | opacity 0.05 |
+| Incoming edge | origStroke + flow anim (if dashed) | teal `#70e1cb`, `arr-hi-in`, flow anim | opacity 0.05 |
 | Edge labels | opacity 0.6 | opacity 1, colored | opacity 0 |
 
 **Directional tooltip content:**
@@ -443,7 +441,7 @@ See `topology-skeleton.html` in this skill directory for a complete working exam
 
 Vanilla HTML/CSS/JS by default. Add libraries only when genuinely needed:
 - `Chart.js` — default for `analysis` type; optional for other types
-- `Mermaid` — for `flow` type when the flow is simple and linear (≤ 10 nodes, no custom styling needed); use vanilla SVG for complex state machines, multi-path flows, or when custom interaction is required
+- `Mermaid` — only for quick flowcharts or sequences
 - `Reveal.js` — only for deck type with explicit slide navigation
 - `D3.js` — for `topology` type when 15+ nodes or positions are unknown (force-directed layout); load via CDN `d3.v7.min.js`
 
@@ -554,7 +552,7 @@ Start from this and strip sections that aren't needed.
     .section-head {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: end;
       gap: 16px;
       margin-bottom: 18px;
     }
@@ -564,7 +562,6 @@ Start from this and strip sections that aren't needed.
     .grid { display: grid; gap: 16px; }
     .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
     .card {
       border-radius: var(--radius-lg);
@@ -593,7 +590,7 @@ Start from this and strip sections that aren't needed.
     }
 
     @media (max-width: 900px) {
-      .grid.two, .grid.three, .grid.four { grid-template-columns: 1fr; }
+      .grid.two, .grid.three { grid-template-columns: 1fr; }
       .section-head { display: block; }
     }
 
@@ -601,7 +598,7 @@ Start from this and strip sections that aren't needed.
       body { overflow-x: hidden; }
       .page { width: calc(100% - 20px); }
       .hero, .section { padding: 18px; }
-      p { font-size: 15px; }
+      p { font-size: 14px; }
     }
 
     @media print {
@@ -654,6 +651,3 @@ Before finalizing, verify:
 - [ ] Items of the same importance have the same visual weight
 - [ ] Reducing the card count would not improve readability
 - [ ] No horizontal scrolling required to read a paragraph on mobile
-- [ ] External libraries (Chart.js, D3.js) load without console errors
-- [ ] All interactive features (tabs, filters, tooltips) work in the default state
-- [ ] Small text (≤ 13px) meets WCAG AA contrast ratio (4.5:1 minimum)
