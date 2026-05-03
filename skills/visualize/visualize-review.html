@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualize Skill Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111f;
+      --surface: rgba(12, 21, 36, 0.92);
+      --surface-strong: rgba(16, 28, 46, 0.98);
+      --border: rgba(153, 186, 255, 0.14);
+      --border-strong: rgba(153, 186, 255, 0.28);
+      --text: #edf3ff;
+      --text-muted: #98abc9;
+      --accent: #68b6ff;
+      --accent-2: #70e1cb;
+      --danger: #ff8c9f;
+      --warning: #ffd072;
+      --success: #52d988;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow: 0 24px 72px rgba(0, 0, 0, 0.34);
+      --font-sans: "Inter", "Noto Sans KR", -apple-system, sans-serif;
+      --font-mono: "SFMono-Regular", "JetBrains Mono", monospace;
+      --max: 1240px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 0 0 80px;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 72px 24px 56px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(104, 182, 255, 0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 60%, rgba(112, 225, 203, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(104, 182, 255, 0.1);
+      border: 1px solid rgba(104, 182, 255, 0.25);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .hero-meta {
+      font-size: 13px;
+      color: rgba(152, 171, 201, 0.8);
+    }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 40px 0 56px;
+    }
+
+    .stat-card {
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .stat-card.high::before  { background: var(--danger); }
+    .stat-card.medium::before { background: var(--warning); }
+    .stat-card.low::before   { background: var(--accent-2); }
+
+    .stat-card.high  { border-color: rgba(255, 140, 159, 0.2); }
+    .stat-card.medium { border-color: rgba(255, 208, 114, 0.2); }
+    .stat-card.low   { border-color: rgba(112, 225, 203, 0.2); }
+
+    .stat-icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .stat-number {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-card.high  .stat-number { color: var(--danger); }
+    .stat-card.medium .stat-number { color: var(--warning); }
+    .stat-card.low   .stat-number { color: var(--accent-2); }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+
+    .stat-desc {
+      font-size: 12px;
+      color: rgba(152, 171, 201, 0.75);
+    }
+
+    /* ── Summary Bar ── */
+    .summary-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 56px;
+    }
+
+    .summary-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .summary-bar-left span {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .summary-bar-left strong {
+      color: var(--text);
+    }
+
+    .effort-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(112, 225, 203, 0.1);
+      border: 1px solid rgba(112, 225, 203, 0.25);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-2);
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .priority-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 14px 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .priority-badge.high {
+      background: rgba(255, 140, 159, 0.12);
+      border: 1px solid rgba(255, 140, 159, 0.3);
+      color: var(--danger);
+    }
+
+    .priority-badge.medium {
+      background: rgba(255, 208, 114, 0.1);
+      border: 1px solid rgba(255, 208, 114, 0.28);
+      color: var(--warning);
+    }
+
+    .priority-badge.low {
+      background: rgba(112, 225, 203, 0.1);
+      border: 1px solid rgba(112, 225, 203, 0.25);
+      color: var(--accent-2);
+    }
+
+    .section-title-block h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .section-title-block p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ── Issue Cards ── */
+    .cards {
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-1px);
+    }
+
+    .card.high   { border-left: 3px solid var(--danger); }
+    .card.medium { border-left: 3px solid var(--warning); }
+    .card.low    { border-left: 3px solid var(--accent-2); }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .card-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .card-body {
+      display: grid;
+      gap: 14px;
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 8px 16px;
+      align-items: baseline;
+    }
+
+    .card-row-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      padding-top: 2px;
+    }
+
+    .card-row-value {
+      font-size: 13.5px;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    .location-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(104, 182, 255, 0.08);
+      border: 1px solid rgba(104, 182, 255, 0.18);
+      border-radius: 6px;
+      padding: 2px 9px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(153, 186, 255, 0.1);
+      border-radius: 10px;
+      padding: 14px 18px;
+      overflow-x: auto;
+    }
+
+    .code-block pre {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: #c9d9f0;
+      white-space: pre;
+    }
+
+    .code-comment { color: #546880; }
+    .code-prop    { color: #68b6ff; }
+    .code-value   { color: #70e1cb; }
+    .code-selector { color: #ffd072; }
+    .code-deleted  { color: var(--danger); text-decoration: line-through; opacity: 0.7; }
+    .code-added    { color: var(--success); }
+
+    /* ── Impact chip ── */
+    .impact-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .impact-chip.high {
+      background: rgba(255, 140, 159, 0.12);
+      color: var(--danger);
+    }
+
+    .impact-chip.medium {
+      background: rgba(255, 208, 114, 0.1);
+      color: var(--warning);
+    }
+
+    .impact-chip.low {
+      background: rgba(112, 225, 203, 0.1);
+      color: var(--accent-2);
+    }
+
+    /* ── Action Items ── */
+    .action-section {
+      margin-top: 64px;
+    }
+
+    .action-section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .action-section-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .action-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .action-card {
+      background: var(--surface-strong);
+      border: 1px solid rgba(255, 140, 159, 0.18);
+      border-radius: var(--radius-lg);
+      padding: 24px 26px;
+    }
+
+    .action-card-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--danger);
+      margin-bottom: 8px;
+    }
+
+    .action-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .diff-line {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+
+    .diff-del {
+      background: rgba(255, 140, 159, 0.08);
+      color: var(--danger);
+    }
+
+    .diff-add {
+      background: rgba(82, 217, 136, 0.08);
+      color: var(--success);
+    }
+
+    .diff-ctx {
+      color: #546880;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 48px 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding-top: 48px;
+      font-size: 12px;
+      color: rgba(152, 171, 201, 0.75);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .action-cards { grid-template-columns: 1fr; }
+      .card-row { grid-template-columns: 1fr; gap: 4px; }
+      .summary-bar { flex-direction: column; align-items: flex-start; }
+      .hero { padding: 48px 16px 40px; }
+    }
+
+    @media (max-width: 480px) {
+      body { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Hero ── -->
+  <div class="hero">
+    <div class="container">
+      <div class="hero-badge" lang="en">Code Review · /visualize Skill</div>
+      <h1 lang="en">Visualize Skill Review</h1>
+      <p class="hero-subtitle">개선 포인트 분석 리포트</p>
+      <p class="hero-meta">2026-05-01 · 총 8건 발견</p>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ── Stats Row ── -->
+    <div class="stats-row">
+      <div class="stat-card high">
+        <span class="stat-icon">🔴</span>
+        <div class="stat-number">2</div>
+        <div class="stat-label">High Priority</div>
+        <div class="stat-desc">버그 / 명세 위반</div>
+      </div>
+      <div class="stat-card medium">
+        <span class="stat-icon">🟡</span>
+        <div class="stat-number">3</div>
+        <div class="stat-label">Medium Priority</div>
+        <div class="stat-desc">구조적 갭</div>
+      </div>
+      <div class="stat-card low">
+        <span class="stat-icon">🟢</span>
+        <div class="stat-number">3</div>
+        <div class="stat-label">Low Priority</div>
+        <div class="stat-desc">품질 개선</div>
+      </div>
+    </div>
+
+    <!-- ── Summary Bar ── -->
+    <div class="summary-bar">
+      <div class="summary-bar-left">
+        <span>총 이슈: <strong>8건</strong></span>
+        <span style="color: var(--border-strong)">·</span>
+        <span>즉시 수정 가능: <strong>2건 (CSS 버그)</strong></span>
+        <span style="color: var(--border-strong)">·</span>
+        <span>문서 보완 필요: <strong>5건</strong></span>
+      </div>
+      <div class="effort-pill">
+        ⏱ 예상 수정 시간: ~30분
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ HIGH ════════════════════════════════ -->
+    <div class="section">
+      <div class="section-head">
+        <div class="priority-badge high">🔴 High</div>
+        <div class="section-title-block">
+          <h2>버그 / 명세 위반</h2>
+          <p>스켈레톤 코드가 설계 규칙과 직접 충돌하는 항목 — 즉시 수정 권장</p>
+        </div>
+      </div>
+
+      <div class="cards">
+
+        <!-- Card 1 -->
+        <div class="card high">
+          <div class="card-header">
+            <div class="card-num">Issue #1</div>
+            <div class="card-title">모바일 브레이크포인트가 디자인 규칙을 위반</div>
+            <span class="impact-chip high">버그</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              디자인 규칙은 <em>"Body는 15px 또는 16px — 설명 텍스트에 절대 14px을 기본값으로 사용하지 말 것"</em>이라고 명시하지만,
+              스켈레톤의 모바일 미디어 쿼리는 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">p { font-size: 14px }</code>를 직접 적용하여 규칙과 정면 충돌합니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">위치</span>
+              <span class="card-row-value">
+                <span class="location-pill">HTML Skeleton → @media (max-width: 375px) 블록</span>
+              </span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">규칙 출처</span>
+              <span class="card-row-value">Design Rules → Typography → Body Text</span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">수정 방법</span>
+              <span class="card-row-value"><code style="font-family:var(--font-mono);font-size:12.5px;color:var(--accent-2)">font-size: 15px</code>로 변경하거나, 해당 오버라이드 자체를 제거</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card high">
+          <div class="card-header">
+            <div class="card-num">Issue #2</div>
+            <div class="card-title">.grid.four CSS 클래스 누락</div>
+            <span class="impact-chip high">버그</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              디자인 규칙에 "4-col은 짧은 KPI, 상태 pill, 숫자 카드 전용"이라는 명세가 있지만,
+              스켈레톤은 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">.grid.two</code>와 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">.grid.three</code>만 정의하고
+              <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">.grid.four</code>는 구현되지 않았습니다.
+              이 클래스를 사용하는 AI 생성 코드는 레이아웃이 전혀 적용되지 않는 상태로 출력됩니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">위치</span>
+              <span class="card-row-value">
+                <span class="location-pill">HTML Skeleton → .grid 정의 블록</span>
+              </span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">수정 방법</span>
+              <span class="card-row-value">아래 CSS 추가 + 모바일에서 2-col로 collapse</span>
+            </div>
+            <div class="code-block">
+              <pre><span class="code-comment">/* 추가할 코드 */</span>
+<span class="code-selector">.grid.four</span> {
+  <span class="code-prop">grid-template-columns</span>: <span class="code-value">repeat(4, minmax(0, 1fr))</span>;
+}
+
+<span class="code-selector">@media (max-width: 768px)</span> {
+  <span class="code-selector">.grid.four</span> {
+    <span class="code-prop">grid-template-columns</span>: <span class="code-value">repeat(2, minmax(0, 1fr))</span>;
+  }
+}</pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════ MEDIUM ════════════════════════════════ -->
+    <div class="section">
+      <div class="section-head">
+        <div class="priority-badge medium">🟡 Medium</div>
+        <div class="section-title-block">
+          <h2>구조적 갭</h2>
+          <p>출력 일관성과 사용자 경험에 영향을 주는 문서·로직 누락 항목</p>
+        </div>
+      </div>
+
+      <div class="cards">
+
+        <!-- Card 3 -->
+        <div class="card medium">
+          <div class="card-header">
+            <div class="card-num">Issue #3</div>
+            <div class="card-title">타입 문서의 심각한 불균형</div>
+            <span class="impact-chip medium">구조 갭</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">analysis</code>와 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">topology</code> 타입은 구조, 패턴, 코드 예시가 상세히 문서화되어 있는 반면,
+              <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">report</code> · <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">flow</code> · <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">comparison</code> · <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">timeline</code> · <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">deck</code>은 타입 테이블의 한 줄 설명이 전부입니다.
+              결과적으로 타입 선택에 따라 출력 품질이 크게 달라집니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">영향</span>
+              <span class="card-row-value">타입별 출력 품질 불일치, AI가 undocumented 타입을 임의 해석</span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">수정 방법</span>
+              <span class="card-row-value">5개 미문서 타입에 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">analysis</code> 타입처럼 최소 "Structure" 서브섹션 추가 (섹션 구성, 필수 컴포넌트)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="card medium">
+          <div class="card-header">
+            <div class="card-num">Issue #4</div>
+            <div class="card-title">워크플로우 Step 3에 결정 기준 없음</div>
+            <span class="impact-chip medium">구조 갭</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              Step 3은 "결정: 새 파일 생성 또는 기존 HTML 개선"이라고 명시하지만,
+              언제 개선하고 언제 새로 만들어야 하는지에 대한 기준이 전혀 없습니다.
+              AI는 이 단계에서 매번 자의적으로 판단하게 됩니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">위치</span>
+              <span class="card-row-value">
+                <span class="location-pill">Workflow → Step 3</span>
+              </span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">수정 방법</span>
+              <span class="card-row-value">명확한 결정 규칙 추가</span>
+            </div>
+            <div class="code-block">
+              <pre><span class="code-comment">// 추가할 결정 규칙 (문서 텍스트)</span>
+기존 HTML 파일이 명시적으로 참조된 경우 → 개선(improve)
+그렇지 않은 경우 → 새 파일 생성(create new)</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="card medium">
+          <div class="card-header">
+            <div class="card-num">Issue #5</div>
+            <div class="card-title">topology-skeleton.html 참조가 실제로는 접근 불가</div>
+            <span class="impact-chip medium">구조 갭</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              topology 섹션은 <em>"스킬 디렉터리의 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">topology-skeleton.html</code>을 참고하라"</em>고 안내하지만,
+              Claude는 스킬 툴을 통해 이 파일에 접근할 수 없습니다. 실제로는 죽은 참조(dead reference)입니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">위치</span>
+              <span class="card-row-value">
+                <span class="location-pill">topology 섹션 → 예시 참조</span>
+              </span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">수정 방법</span>
+              <span class="card-row-value">핵심 부분을 인라인으로 포함시키거나, 해당 참조를 완전히 제거</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════ LOW ════════════════════════════════ -->
+    <div class="section">
+      <div class="section-head">
+        <div class="priority-badge low">🟢 Low</div>
+        <div class="section-title-block">
+          <h2>품질 개선 (Polish)</h2>
+          <p>기능에는 영향 없지만 완성도와 일관성을 높이는 사항</p>
+        </div>
+      </div>
+
+      <div class="cards">
+
+        <!-- Card 6 -->
+        <div class="card low">
+          <div class="card-header">
+            <div class="card-num">Issue #6</div>
+            <div class="card-title">리뷰 체크리스트가 너무 최소화되어 있음</div>
+            <span class="impact-chip low">품질</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              현재 체크리스트는 5개 항목으로 UX/가독성에만 초점을 맞추고 있습니다.
+              기술적 검증 항목이 없어 CDN 로드 실패나 JS 오류가 있는 출력도 통과될 수 있습니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">누락 항목</span>
+              <span class="card-row-value">외부 라이브러리 CDN 로드 성공 여부 · JS 콘솔 오류 없음 · 기본 상태에서 모든 인터랙티브 기능 동작</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 7 -->
+        <div class="card low">
+          <div class="card-header">
+            <div class="card-num">Issue #7</div>
+            <div class="card-title">flow 타입에 Mermaid vs 바닐라 SVG 가이드 없음</div>
+            <span class="impact-chip low">품질</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              라이브러리 섹션에는 Mermaid를 "간단한 플로우차트에만" 사용하라는 언급이 있지만,
+              <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">flow</code> 타입 섹션에서는 이 결정 기준을 전혀 참조하지 않습니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">수정 방법</span>
+              <span class="card-row-value">flow 타입에 주석 추가 — 단순 선형 플로우 → Mermaid, 복잡한 상태 머신/다중 경로 → 바닐라 SVG</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 8 -->
+        <div class="card low">
+          <div class="card-header">
+            <div class="card-num">Issue #8</div>
+            <div class="card-title">.section-head에 align-items: end 사용으로 이상한 정렬 발생 가능</div>
+            <span class="impact-chip low">품질</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              섹션 헤드에 긴 제목과 짧은 제목이 나란히 있을 때 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">align-items: end</code>는
+              하단 정렬을 적용하여 어색한 레이아웃이 생길 수 있습니다.
+              대부분의 레이아웃에서는 <code style="font-family:var(--font-mono);font-size:12px;color:var(--accent)">flex-start</code>가 더 안전합니다.
+            </p>
+            <div class="card-row">
+              <span class="card-row-label">위치</span>
+              <span class="card-row-value">
+                <span class="location-pill">.section-head CSS 규칙</span>
+              </span>
+            </div>
+            <div class="card-row">
+              <span class="card-row-label">영향도</span>
+              <span class="card-row-value">낮음 — 섹션 헤드가 매우 비대칭일 때만 가시적</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- ════════════════════════════════ ACTION ITEMS ════════════════════════════════ -->
+    <div class="action-section">
+      <h2 class="action-section-title">⚡ 즉시 적용 가능한 CSS 수정 (2건)</h2>
+      <p class="action-section-sub">아래 두 수정은 스켈레톤 파일에서 직접 적용할 수 있는 코드 버그입니다.</p>
+
+      <div class="action-cards">
+
+        <!-- Action 1 -->
+        <div class="action-card">
+          <div class="action-card-label">
+            <span>🔴</span> Fix #1 · Mobile Font Size
+          </div>
+          <div class="action-card-title">@media (max-width: 375px) — p 폰트 사이즈 수정</div>
+          <div class="code-block">
+            <pre><span class="diff-ctx">@media (max-width: 375px) {</span>
+<span class="diff-ctx">  p {</span>
+<span class="diff-del">-   font-size: 14px;  /* 규칙 위반 */</span>
+<span class="diff-add">+   font-size: 15px;  /* 최소 15px 유지 */</span>
+<span class="diff-ctx">  }</span>
+<span class="diff-ctx">}</span></pre>
+          </div>
+        </div>
+
+        <!-- Action 2 -->
+        <div class="action-card">
+          <div class="action-card-label">
+            <span>🔴</span> Fix #2 · Missing .grid.four
+          </div>
+          <div class="action-card-title">.grid 정의 블록에 .grid.four 추가</div>
+          <div class="code-block">
+            <pre><span class="diff-ctx">/* 기존 .grid.three 다음에 추가 */</span>
+<span class="diff-add">+.grid.four {</span>
+<span class="diff-add">+  grid-template-columns:</span>
+<span class="diff-add">+    repeat(4, minmax(0, 1fr));</span>
+<span class="diff-add">+}</span>
+<span class="diff-add">+@media (max-width: 768px) {</span>
+<span class="diff-add">+  .grid.four {</span>
+<span class="diff-add">+    grid-template-columns: 1fr;</span>
+<span class="diff-add">+  }</span>
+<span class="diff-add">+}</span></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="footer">
+      <p>Visualize Skill Code Review · Generated 2026-05-01 · 8 issues found across 3 priority levels</p>
+    </div>
+
+  </div><!-- /container -->
+
+</body>
+</html>

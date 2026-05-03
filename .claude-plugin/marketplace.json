@@ -9,7 +9,7 @@
       "name": "claude-visualize",
       "source": "./",
       "description": "Generate self-contained HTML visualizations from documents and data",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "SeokRae"
       }
