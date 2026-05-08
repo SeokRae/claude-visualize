@@ -43,6 +43,7 @@ Convert any document or structured data into a readable, self-contained single H
 | `deck` | Presentation, storytelling, section-driven narrative | title slide → section slides → closing |
 | `analysis` | Data-driven investigation — distribution, density, statistical patterns | hero → data context → chart sections → interpretation → synthesis |
 | `topology` | Node-edge graphs — service mesh, infra, microservice dependencies, network | hero → SVG canvas (nodes + edges + clusters) → legend → notes |
+| `mockup` | UI screen design — two competing proposals shown as A/B tabs for comparison | tab-switcher (A / B buttons) → proposal A panel → proposal B panel |
 
 **Selection heuristics**:
 - Long text with explanation → `report`
@@ -52,6 +53,7 @@ Convert any document or structured data into a readable, self-contained single H
 - Core is narrative or presentation → `deck`
 - Core is actual data with charts, distributions, or statistical patterns → `analysis`
 - Core is nodes and edges (services, databases, network components, infra, K8s, microservices) → `topology`
+- Request is "draw a screen", "show me the UI", or "design a page" → `mockup`
 - When unsure, use `report` and mix in a `flow` or `comparison` section.
 
 Don't mix three or more types. Pick one primary type and add secondary patterns sparingly.
@@ -436,6 +438,72 @@ Use `simulation.stop()` + `simulation.tick(300)` for static render (no animation
 ### Reference Implementation
 
 See `topology-skeleton.html` in this skill directory for a complete working example with all node types, edge styles, zoom/pan, legend, and tooltip.
+
+## Mockup Type — Additional Rules
+
+Use `mockup` when the request is to **design or sketch a UI screen** — "draw the screen", "show me how it would look", "design the page", etc.
+
+### A/B Proposal Logic
+
+Always generate two distinct proposals. Decide the differentiation axis based on context:
+
+| Context signal | A/B axis |
+|----------------|----------|
+| Request mentions layout, navigation, structure | **Layout** — e.g., sidebar nav vs top nav, card grid vs list |
+| Request mentions look, style, feel, color | **Style/Theme** — e.g., dark minimal vs light airy |
+| No strong signal | Default to **Layout** axis |
+
+Each proposal must include a one-line intent label:
+- Proposal A: `"[A] Intent: {one sentence describing this design direction}"`
+- Proposal B: `"[B] Intent: {one sentence describing this design direction}"`
+
+### Tab-Switcher Structure
+
+```html
+<!-- Tab buttons -->
+<div class="mockup-tabs">
+  <button class="tab active" data-target="panel-a">A안</button>
+  <button class="tab" data-target="panel-b">B안</button>
+</div>
+
+<!-- Panels -->
+<div id="panel-a" class="mockup-panel active">
+  <p class="intent-label">[A] Intent: {one sentence}</p>
+  <!-- Proposal A content -->
+</div>
+<div id="panel-b" class="mockup-panel" style="display:none">
+  <p class="intent-label">[B] Intent: {one sentence}</p>
+  <!-- Proposal B content -->
+</div>
+```
+
+```css
+.mockup-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.tab {
+  padding: 8px 20px; border-radius: 999px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-muted); cursor: pointer; font-size: 14px;
+}
+.tab.active { background: var(--accent); color: #07101b; border-color: var(--accent); font-weight: 700; }
+.intent-label { font-size: 13px; color: var(--accent-2); margin-bottom: 16px; font-style: italic; }
+```
+
+```js
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mockup-panel').forEach(p => p.style.display = 'none');
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).style.display = 'block';
+  });
+});
+```
+
+### Content Rules
+
+- Render each proposal as a realistic screen mockup using the standard HTML skeleton (dark theme, same CSS variables)
+- Use placeholder text (`{Label}`, `{Value}`) and representative UI elements — buttons, inputs, tables, cards as appropriate
+- Keep both proposals at the same level of fidelity
+- Do not add a third proposal unless explicitly requested
 
 ## Libraries
 
