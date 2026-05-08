@@ -1,6 +1,6 @@
 {
   "name": "claude-visualize",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Generate self-contained HTML visualizations from documents and data",
   "author": {
     "name": "SeokRae",
