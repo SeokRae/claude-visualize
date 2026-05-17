@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Machine Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #08111f;
+            --text: #e5e7eb;
+            --text-dim: #9ca3af;
+            --border: #1f2937;
+            --accent: #68b6ff;
+            --accent-2: #70e1cb;
+            --danger: #ff8c9f;
+            --warning: #ffd072;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .description {
+            color: var(--text-dim);
+            margin-bottom: 32px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .canvas-wrapper {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow: auto;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            min-height: 600px;
+        }
+
+        .node {
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .node:hover rect {
+            filter: brightness(1.2);
+        }
+
+        .node rect {
+            transition: all 0.2s;
+        }
+
+        .node.active rect {
+            filter: drop-shadow(0 0 8px currentColor) brightness(1.3);
+        }
+
+        .node text {
+            pointer-events: none;
+            user-select: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .node.dim rect,
+        .node.dim text {
+            opacity: 0.3;
+        }
+
+        .edge {
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: opacity 0.2s;
+        }
+
+        .edge.active {
+            stroke-width: 3;
+            filter: drop-shadow(0 0 4px currentColor);
+        }
+
+        .edge.dim {
+            opacity: 0.2;
+        }
+
+        .edge-label {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            user-select: none;
+            fill: var(--text);
+        }
+
+        /* Animated dashes */
+        .edge {
+            stroke-dasharray: 8, 4;
+            animation: flow 20s linear infinite;
+        }
+
+        .edge.solid {
+            stroke-dasharray: none;
+            animation: none;
+        }
+
+        @keyframes flow {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -12; }
+        }
+
+        /* Color palette */
+        .stroke-blue { stroke: #68b6ff; }
+        .fill-blue { fill: rgba(104, 182, 255, 0.12); }
+
+        .stroke-green { stroke: #51cf66; }
+        .fill-green { fill: rgba(81, 207, 102, 0.12); }
+
+        .stroke-red { stroke: #ff6b6b; }
+        .fill-red { fill: rgba(255, 107, 107, 0.12); }
+
+        .stroke-yellow { stroke: #ffd68f; }
+        .fill-yellow { fill: rgba(255, 214, 111, 0.12); }
+
+        .stroke-purple { stroke: #c084fc; }
+        .fill-purple { fill: rgba(192, 132, 252, 0.12); }
+
+        .stroke-teal { stroke: #70e1cb; }
+        .fill-teal { fill: rgba(112, 225, 203, 0.12); }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid currentColor;
+        }
+
+        .legend-item.blue .legend-swatch { color: #68b6ff; }
+        .legend-item.green .legend-swatch { color: #51cf66; }
+        .legend-item.red .legend-swatch { color: #ff6b6b; }
+        .legend-item.yellow .legend-swatch { color: #ffd68f; }
+        .legend-item.purple .legend-swatch { color: #c084fc; }
+        .legend-item.teal .legend-swatch { color: #70e1cb; }
+
+        .legend-hint {
+            margin-left: auto;
+            color: var(--accent);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Order Fulfillment State Machine</h1>
+        <p class="description">
+            주문 처리 과정의 상태 변화를 시각화합니다. 각 상태와 전이를 클릭하여 탐색할 수 있습니다.
+        </p>
+
+        <div class="canvas-wrapper">
+            <svg id="stateMachine" viewBox="0 0 0 0">
+                <defs id="markerDefs"></defs>
+                <g id="edges"></g>
+                <g id="nodes"></g>
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item blue"><div class="legend-swatch"></div><span>주문 진행</span></div>
+            <div class="legend-item green"><div class="legend-swatch"></div><span>배송</span></div>
+            <div class="legend-item red"><div class="legend-swatch"></div><span>취소/반품</span></div>
+            <div class="legend-hint">💡 클릭으로 전이 탐색</div>
+        </div>
+    </div>
+
+    <script>
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 🔧 EDIT HERE — 노드와 엣지 데이터만 수정하세요
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        const NODES = [
+            { id: 'DRAFT', label: 'Draft', sub: '주문 작성', x: 100, y: 200, color: 'blue' },
+            { id: 'CONFIRMED', label: 'Confirmed', sub: '주문 확인됨', x: 300, y: 200, color: 'blue' },
+            { id: 'PROCESSING', label: 'Processing', sub: '처리 중', x: 500, y: 200, color: 'blue' },
+            { id: 'SHIPPED', label: 'Shipped', sub: '배송 중', x: 700, y: 200, color: 'green' },
+            { id: 'DELIVERED', label: 'Delivered', sub: '배송 완료', x: 900, y: 200, color: 'green' },
+            { id: 'CANCELLED', label: 'Cancelled', sub: '취소됨', x: 500, y: 380, color: 'red' },
+            { id: 'RETURNED', label: 'Returned', sub: '반품됨', x: 900, y: 380, color: 'red' }
+        ];
+
+        const EDGES = [
+            { from: 'DRAFT', to: 'CONFIRMED', label: '주문 확인', color: 'blue', dash: false, self: false },
+            { from: 'CONFIRMED', to: 'PROCESSING', label: '결제 완료', color: 'blue', dash: false, self: false },
+            { from: 'PROCESSING', to: 'SHIPPED', label: '출고', color: 'blue', dash: false, self: false },
+            { from: 'SHIPPED', to: 'DELIVERED', label: '배송 완료', color: 'green', dash: false, self: false },
+            { from: 'DELIVERED', to: 'RETURNED', label: '반품 신청', color: 'red', dash: true, self: false },
+            { from: 'DRAFT', to: 'CANCELLED', label: '취소', color: 'red', dash: true, self: false },
+            { from: 'CONFIRMED', to: 'CANCELLED', label: '취소', color: 'red', dash: true, self: false },
+            { from: 'PROCESSING', to: 'CANCELLED', label: '취소', color: 'red', dash: true, self: false }
+        ];
+
+        // ━━ 이하 수정 불필요 ━━
+
+        const NODE_WIDTH = 160;
+        const NODE_HEIGHT = 56;
+        const NODE_RADIUS = 12;
+
+        const svg = document.getElementById('stateMachine');
+        const edgesGroup = document.getElementById('edges');
+        const nodesGroup = document.getElementById('nodes');
+        const markerDefs = document.getElementById('markerDefs');
+
+        // Compute viewBox from node positions
+        function computeViewBox() {
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            NODES.forEach(node => {
+                minX = Math.min(minX, node.x - NODE_WIDTH / 2 - 40);
+                maxX = Math.max(maxX, node.x + NODE_WIDTH / 2 + 40);
+                minY = Math.min(minY, node.y - NODE_HEIGHT / 2 - 40);
+                maxY = Math.max(maxY, node.y + NODE_HEIGHT / 2 + 40);
+            });
+            return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+        }
+
+        const viewBox = computeViewBox();
+        svg.setAttribute('viewBox', `${viewBox.minX} ${viewBox.minY} ${viewBox.width} ${viewBox.height}`);
+
+        // Create arrow markers for each color
+        const colors = ['blue', 'green', 'red', 'yellow', 'purple', 'teal'];
+        const colorMap = {
+            blue: '#68b6ff',
+            green: '#51cf66',
+            red: '#ff6b6b',
+            yellow: '#ffd68f',
+            purple: '#c084fc',
+            teal: '#70e1cb'
+        };
+
+        colors.forEach(color => {
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', `arrow-${color}`);
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '10');
+            marker.setAttribute('refX', '8');
+            marker.setAttribute('refY', '3');
+            marker.setAttribute('orient', 'auto');
+            marker.setAttribute('markerUnits', 'strokeWidth');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M0,0 L0,6 L9,3 z');
+            path.setAttribute('fill', colorMap[color]);
+            marker.appendChild(path);
+            markerDefs.appendChild(marker);
+        });
+
+        // Find node by id
+        function getNode(id) {
+            return NODES.find(n => n.id === id);
+        }
+
+        // Create path for edge
+        function createEdgePath(fromNode, toNode, edge) {
+            if (edge.self) {
+                // Self-loop arc above node
+                const cx = fromNode.x;
+                const cy = fromNode.y - NODE_HEIGHT / 2 - 30;
+                const r = NODE_WIDTH / 2 + 20;
+                return `M ${fromNode.x},${fromNode.y - NODE_HEIGHT / 2} A ${r},${r} 0 0,1 ${fromNode.x},${fromNode.y - NODE_HEIGHT / 2}`;
+            } else {
+                // Straight line (cubic bezier if same y)
+                if (Math.abs(fromNode.y - toNode.y) < 5) {
+                    return `M ${fromNode.x + NODE_WIDTH / 2},${fromNode.y} L ${toNode.x - NODE_WIDTH / 2},${toNode.y}`;
+                } else {
+                    const ctrlX = (fromNode.x + toNode.x) / 2;
+                    return `M ${fromNode.x + NODE_WIDTH / 2},${fromNode.y} Q ${ctrlX},${(fromNode.y + toNode.y) / 2} ${toNode.x - NODE_WIDTH / 2},${toNode.y}`;
+                }
+            }
+        }
+
+        // Render edges
+        EDGES.forEach((edge, idx) => {
+            const fromNode = getNode(edge.from);
+            const toNode = getNode(edge.to);
+            if (!fromNode || !toNode) return;
+
+            const pathData = createEdgePath(fromNode, toNode, edge);
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('class', `edge stroke-${edge.color} ${edge.dash ? '' : 'solid'}`);
+            path.setAttribute('marker-end', `url(#arrow-${edge.color})`);
+            path.dataset.edgeIndex = idx;
+            edgesGroup.appendChild(path);
+
+            // Edge label
+            if (edge.label) {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('class', 'edge-label');
+                const midX = (fromNode.x + toNode.x) / 2;
+                const midY = (fromNode.y + toNode.y) / 2;
+                text.setAttribute('x', midX);
+                text.setAttribute('y', midY - 8);
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = edge.label;
+                edgesGroup.appendChild(text);
+            }
+        });
+
+        // Render nodes
+        NODES.forEach(node => {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('class', 'node');
+            g.dataset.nodeId = node.id;
+
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', node.x - NODE_WIDTH / 2);
+            rect.setAttribute('y', node.y - NODE_HEIGHT / 2);
+            rect.setAttribute('width', NODE_WIDTH);
+            rect.setAttribute('height', NODE_HEIGHT);
+            rect.setAttribute('rx', NODE_RADIUS);
+            rect.setAttribute('class', `fill-${node.color} stroke-${node.color}`);
+            rect.setAttribute('stroke-width', '2');
+
+            const mainText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            mainText.setAttribute('x', node.x);
+            mainText.setAttribute('y', node.y - 4);
+            mainText.setAttribute('text-anchor', 'middle');
+            mainText.setAttribute('dominant-baseline', 'middle');
+            mainText.textContent = node.label;
+
+            const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            subText.setAttribute('x', node.x);
+            subText.setAttribute('y', node.y + 12);
+            subText.setAttribute('text-anchor', 'middle');
+            subText.setAttribute('dominant-baseline', 'middle');
+            subText.setAttribute('font-size', '11');
+            subText.setAttribute('fill', 'var(--text-dim)');
+            subText.textContent = node.sub;
+
+            g.appendChild(rect);
+            g.appendChild(mainText);
+            g.appendChild(subText);
+            nodesGroup.appendChild(g);
+        });
+
+        // Interaction
+        let activeNode = null;
+
+        function clearSelection() {
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active', 'dim'));
+            document.querySelectorAll('.edge').forEach(e => e.classList.remove('active', 'dim'));
+        }
+
+        function selectNode(nodeId) {
+            clearSelection();
+            const nodeEl = document.querySelector(`[data-node-id="${nodeId}"]`);
+            nodeEl.classList.add('active');
+
+            const connectedNodes = new Set();
+            const connectedEdges = new Set();
+
+            EDGES.forEach((edge, idx) => {
+                if (edge.from === nodeId || edge.to === nodeId) {
+                    connectedEdges.add(idx);
+                    if (edge.from === nodeId) connectedNodes.add(edge.to);
+                    if (edge.to === nodeId) connectedNodes.add(edge.from);
+                }
+            });
+
+            document.querySelectorAll('.node').forEach(n => {
+                if (n.dataset.nodeId !== nodeId && !connectedNodes.has(n.dataset.nodeId)) {
+                    n.classList.add('dim');
+                }
+            });
+
+            document.querySelectorAll('.edge').forEach(e => {
+                const idx = parseInt(e.dataset.edgeIndex);
+                if (connectedEdges.has(idx)) {
+                    e.classList.add('active');
+                } else {
+                    e.classList.add('dim');
+                }
+            });
+
+            activeNode = nodeId;
+        }
+
+        document.querySelectorAll('.node').forEach(nodeEl => {
+            nodeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (activeNode === nodeEl.dataset.nodeId) {
+                    clearSelection();
+                    activeNode = null;
+                } else {
+                    selectNode(nodeEl.dataset.nodeId);
+                }
+            });
+        });
+
+        svg.addEventListener('click', () => {
+            clearSelection();
+            activeNode = null;
+        });
+    </script>
+</body>
+</html>

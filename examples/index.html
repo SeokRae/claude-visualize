@@ -164,15 +164,17 @@
     .type-timeline   { background: rgba(104, 182, 255, 0.08); color: #9dd4ff; }
     .type-dashboard  { background: rgba(112, 225, 203, 0.08); color: #8de8d4; }
     .type-deck       { background: rgba(200, 160, 255, 0.1); color: #c8a0ff; }
-    .type-analysis   { background: rgba(255, 208, 114, 0.08); color: #ffd88a; }
+    .type-analysis       { background: rgba(255, 208, 114, 0.08); color: #ffd88a; }
+    .type-state-machine  { background: rgba(168, 125, 255, 0.1); color: #c8a0ff; }
 
-    .card.report:hover     { background: rgba(104, 182, 255, 0.04); }
-    .card.flow:hover       { background: rgba(112, 225, 203, 0.04); }
-    .card.comparison:hover { background: rgba(255, 208, 114, 0.04); }
-    .card.timeline:hover   { background: rgba(104, 182, 255, 0.03); }
-    .card.dashboard:hover  { background: rgba(112, 225, 203, 0.03); }
-    .card.deck:hover       { background: rgba(200, 160, 255, 0.04); }
-    .card.analysis:hover   { background: rgba(255, 208, 114, 0.04); }
+    .card.report:hover         { background: rgba(104, 182, 255, 0.04); }
+    .card.flow:hover           { background: rgba(112, 225, 203, 0.04); }
+    .card.comparison:hover     { background: rgba(255, 208, 114, 0.04); }
+    .card.timeline:hover       { background: rgba(104, 182, 255, 0.03); }
+    .card.dashboard:hover      { background: rgba(112, 225, 203, 0.03); }
+    .card.deck:hover           { background: rgba(200, 160, 255, 0.04); }
+    .card.analysis:hover       { background: rgba(255, 208, 114, 0.04); }
+    .card.state-machine:hover  { background: rgba(168, 125, 255, 0.04); }
 
     /* Footer */
     .footer {
@@ -291,6 +293,16 @@
         <h3>Response Time Distribution</h3>
         <p>Statistical investigation of auth latency — distribution bars, dual-axis tail rate, log-normal density curves, and observed-value markers.</p>
         <div class="card-footer">analysis.html</div>
+      </a>
+
+      <a class="card state-machine" href="state-machine.html">
+        <div class="card-top">
+          <span class="type-badge type-state-machine">state-machine</span>
+        </div>
+        <div class="card-icon">⚙️</div>
+        <h3>Order Fulfillment State Machine</h3>
+        <p>Interactive state machine diagram — data-driven nodes and transitions, flowing dash animations, click-to-highlight interaction, and configurable color themes.</p>
+        <div class="card-footer">state-machine.html</div>
       </a>
 
     </div>
